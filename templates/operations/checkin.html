@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Parámetros de entrada — SGMR{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <h2 class="h5 mb-3">Parámetros de entrada (Check-in)</h2>
+    <p class="text-muted">{{ registro.rack }} — {{ registro.get_tipo_actividad_display }}</p>
+    <form method="post">
+      {% csrf_token %}
+      <div class="card mb-3">
+        <div class="card-body">
+          <div class="row g-2">
+            <div class="col-6 col-md-4"><label class="form-label small">Presión succión (psi)</label>{{ form.presion_succion }}</div>
+            <div class="col-6 col-md-4"><label class="form-label small">Presión descarga (psi)</label>{{ form.presion_descarga }}</div>
+            <div class="col-6 col-md-4"><label class="form-label small">Temp. succión (°C)</label>{{ form.temp_succion }}</div>
+            <div class="col-6 col-md-4"><label class="form-label small">Temp. descarga (°C)</label>{{ form.temp_descarga }}</div>
+            <div class="col-6 col-md-4"><label class="form-label small">Set-point (°C)</label>{{ form.setpoint_actual }}</div>
+            <div class="col-6 col-md-4"><label class="form-label small">Amperaje L1 (A)</label>{{ form.amperaje_linea_1 }}</div>
+            <div class="col-6 col-md-4"><label class="form-label small">Amperaje L2 (A)</label>{{ form.amperaje_linea_2 }}</div>
+            <div class="col-6 col-md-4"><label class="form-label small">Amperaje L3 (A)</label>{{ form.amperaje_linea_3 }}</div>
+          </div>
+          <div class="mt-2"><label class="form-label small">Notas de entrada</label>{{ form.observaciones_entrada }}</div>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Guardar y continuar a cierre</button>
+    </form>
+    <a href="{% url 'operations:checkout' registro_id=registro.pk %}" class="btn btn-link mt-2">Ir directo a cierre (sin guardar entrada)</a>
+  </div>
+</div>
+{% endblock %}

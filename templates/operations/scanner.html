@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Escanear QR — SGMR{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <h2 class="h5 mb-3">Escanear código QR del Rack</h2>
+    {% if tarea_abierta %}
+      <div class="alert alert-warning">
+        Tienes una tarea abierta en <strong>{{ tarea_abierta.rack }}</strong>.
+        <a href="{% url 'operations:checkin' registro_id=tarea_abierta.pk %}">Ir a parámetros de entrada</a> o
+        <a href="{% url 'operations:checkout' registro_id=tarea_abierta.pk %}">Ir a cierre</a>.
+      </div>
+    {% endif %}
+    <div class="card">
+      <div class="card-body">
+        <div id="reader" style="min-height: 280px;"></div>
+        <p class="text-muted small mt-2">Apunta la cámara al QR del rack. Requiere HTTPS en producción para usar la cámara.</p>
+      </div>
+    </div>
+    <div id="resultado" class="mt-3"></div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+(function() {
+  const resultado = document.getElementById('resultado');
+  const reader = document.getElementById('reader');
+  let scanner = null;
+
+  function onScanSuccess(decodedText) {
+    if (scanner && scanner.isScanning()) scanner.stop();
+    const idQr = decodedText.trim();
+    fetch('{% url "operations:api_rack_qr" id_qr="__ID__" %}'.replace('__ID__', encodeURIComponent(idQr)), {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok) {
+          window.location.href = '/rack/' + data.id + '/';
+        } else {
+          resultado.innerHTML = '<div class="alert alert-danger">Rack no encontrado.</div>';
+        }
+      })
+      .catch(() => {
+        resultado.innerHTML = '<div class="alert alert-danger">Rack no encontrado o error de red.</div>';
+      });
+  }
+
+  function onScanError() {}
+
+  if (typeof Html5Qrcode !== 'undefined') {
+    scanner = new Html5Qrcode('reader');
+    scanner.start(
+      { facingMode: 'environment' },
+      { fps: 5, qrbox: { width: 250, height: 250 } },
+      onScanSuccess,
+      onScanError
+    );
+  } else {
+    reader.innerHTML = '<p class="text-danger">No se pudo cargar el escáner QR. Usa HTTPS.</p>';
+  }
+})();
+</script>
+{% endblock %}

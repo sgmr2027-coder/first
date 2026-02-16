@@ -1,0 +1,11 @@
+# Render - Web Service (SGMR)
+# Conectar repo GitHub y definir DATABASE_URL + SECRET_KEY en Environment
+services:
+  - type: web
+    name: sgmr
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn config.wsgi
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0

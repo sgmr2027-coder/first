@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Reportes — SGMR{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <h2 class="h5 mb-3">Reportes y MTTR</h2>
+    <div class="card mb-3">
+      <div class="card-body">
+        <p><strong>Total intervenciones cerradas:</strong> {{ total_intervenciones }}</p>
+        <p><strong>MTTR (minutos):</strong> {{ mttr_minutos|default:"—" }}</p>
+      </div>
+    </div>
+    <a href="{% url 'operations:scanner' %}" class="btn btn-primary">Volver al escáner</a>
+  </div>
+</div>
+{% endblock %}

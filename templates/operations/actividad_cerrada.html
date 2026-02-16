@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Actividad cerrada — SGMR{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="alert alert-success">
+      <strong>Registro cerrado correctamente.</strong> El registro ya no es editable.
+    </div>
+    {% if alerta_corto %}
+      <div class="alert alert-warning">
+        La duración fue muy corta ({{ minutos }} min). Revisa si el registro es correcto.
+      </div>
+    {% endif %}
+    <div class="card">
+      <div class="card-body">
+        <p><strong>Rack:</strong> {{ registro.rack }}</p>
+        <p><strong>Tipo:</strong> {{ registro.get_tipo_actividad_display }}</p>
+        <p><strong>Duración:</strong> {{ minutos|default:"—" }} minutos</p>
+      </div>
+    </div>
+    <a href="{% url 'operations:scanner' %}" class="btn btn-primary mt-3">Escanear otro rack</a>
+    <a href="{% url 'analytics:dashboard' %}" class="btn btn-outline-secondary mt-3">Ver reportes</a>
+  </div>
+</div>
+{% endblock %}

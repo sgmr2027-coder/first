@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Cierre de actividad — SGMR{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <h2 class="h5 mb-3">Cierre de actividad (Check-out)</h2>
+    <p class="text-muted">{{ registro.rack }} — {{ registro.get_tipo_actividad_display }}</p>
+    <form method="post">
+      {% csrf_token %}
+      <div class="card mb-3">
+        <div class="card-header">Observaciones</div>
+        <div class="card-body">{{ form_cierre.observaciones }}</div>
+      </div>
+      <div class="card mb-3">
+        <div class="card-header">Parámetros finales (para comparar)</div>
+        <div class="card-body">
+          <div class="row g-2">
+            <div class="col-6 col-md-4"><label class="form-label small">Presión succión</label>{{ form_salida.presion_succion }}</div>
+            <div class="col-6 col-md-4"><label class="form-label small">Presión descarga</label>{{ form_salida.presion_descarga }}</div>
+            <div class="col-6 col-md-4"><label class="form-label small">Temp. succión</label>{{ form_salida.temp_succion }}</div>
+            <div class="col-6 col-md-4"><label class="form-label small">Temp. descarga</label>{{ form_salida.temp_descarga }}</div>
+            <div class="col-6 col-md-4"><label class="form-label small">Set-point</label>{{ form_salida.setpoint_actual }}</div>
+            <div class="col-6 col-md-4"><label class="form-label small">Amperaje L1</label>{{ form_salida.amperaje_linea_1 }}</div>
+            <div class="col-6 col-md-4"><label class="form-label small">Amperaje L2</label>{{ form_salida.amperaje_linea_2 }}</div>
+            <div class="col-6 col-md-4"><label class="form-label small">Amperaje L3</label>{{ form_salida.amperaje_linea_3 }}</div>
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-success btn-lg">Finalizar y cerrar registro</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

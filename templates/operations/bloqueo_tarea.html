@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Tarea abierta — SGMR{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="alert alert-warning">
+      <strong>No puedes iniciar una nueva tarea</strong> hasta que cierres la actual.
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <p><strong>Rack con tarea abierta:</strong> {{ tarea_abierta.rack }}</p>
+        <p><strong>Tipo:</strong> {{ tarea_abierta.get_tipo_actividad_display }}</p>
+        <p class="mb-0">
+          <a href="{% url 'operations:checkin' registro_id=tarea_abierta.pk %}" class="btn btn-primary me-2">Ir a parámetros de entrada</a>
+          <a href="{% url 'operations:checkout' registro_id=tarea_abierta.pk %}" class="btn btn-outline-primary">Ir a cierre</a>
+        </p>
+      </div>
+    </div>
+    <p class="mt-3">Rack que intentaste escanear: <strong>{{ rack_solicitado.id_qr }}</strong> — {{ rack_solicitado.tienda.nombre }}</p>
+    <a href="{% url 'operations:scanner' %}" class="btn btn-secondary">Volver al escáner</a>
+  </div>
+</div>
+{% endblock %}
