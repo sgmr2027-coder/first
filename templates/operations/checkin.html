@@ -8,22 +8,84 @@
     <form method="post">
       {% csrf_token %}
       <div class="card mb-3">
-        <div class="card-header">Corriente (A) por compresor</div>
-        <div class="card-body">
-          <div class="row g-2">
-            {% for field in form %}
-            {% if 'corriente_compresor_' in field.name %}
-            <div class="col-6 col-md-4 col-lg-3">
-              <label class="form-label small">{{ field.label }}</label>
-              {{ field }}
-            </div>
-            {% endif %}
-            {% endfor %}
-            {% if not registro.rack.total_compresores %}
-            <div class="col-12 text-muted small">Este rack no tiene compresores definidos. Defina cantidad en media/baja
-              en el admin.</div>
-            {% endif %}
+        <div class="card-header">Inspección por Compresor</div>
+        <div class="card-body p-0">
+          {% with comps=form.get_compresores %}
+
+          {% if comps.media %}
+          <div class="p-2 bg-light border-bottom"><strong>Media Temperatura</strong></div>
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 40px;">C#</th>
+                  <th>Corriente (A)</th>
+                  <th>Aceite</th>
+                  <th>Nivel</th>
+                  <th>Ruido</th>
+                  <th class="text-center">Dispara por Aceite</th>
+                  <th class="text-center">Dispara por Presión</th>
+                  <th class="text-center">Traxoil Funcional</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c in comps.media %}
+                <tr>
+                  <td class="fw-bold">{{ c.numero }}</td>
+                  <td style="min-width: 90px;">{{ c.corriente }}</td>
+                  <td style="min-width: 100px;">{{ c.estado_aceite }}</td>
+                  <td style="min-width: 100px;">{{ c.nivel_aceite }}</td>
+                  <td style="min-width: 100px;">{{ c.ruido }}</td>
+                  <td class="text-center">{{ c.dispara_aceite }}</td>
+                  <td class="text-center">{{ c.dispara_presion }}</td>
+                  <td class="text-center">{{ c.funciona_traxoil }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
           </div>
+          {% endif %}
+
+          {% if comps.baja %}
+          <div class="p-2 bg-light border-bottom {% if comps.media %}mt-2{% endif %}"><strong>Baja Temperatura</strong>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 40px;">C#</th>
+                  <th>Corriente (A)</th>
+                  <th>Aceite</th>
+                  <th>Nivel</th>
+                  <th>Ruido</th>
+                  <th class="text-center">Dispara por Aceite</th>
+                  <th class="text-center">Dispara por Presión</th>
+                  <th class="text-center">Traxoil Funcional</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c in comps.baja %}
+                <tr>
+                  <td class="fw-bold">{{ c.numero }}</td>
+                  <td style="min-width: 90px;">{{ c.corriente }}</td>
+                  <td style="min-width: 100px;">{{ c.estado_aceite }}</td>
+                  <td style="min-width: 100px;">{{ c.nivel_aceite }}</td>
+                  <td style="min-width: 100px;">{{ c.ruido }}</td>
+                  <td class="text-center">{{ c.dispara_aceite }}</td>
+                  <td class="text-center">{{ c.dispara_presion }}</td>
+                  <td class="text-center">{{ c.funciona_traxoil }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% endif %}
+
+          {% if not comps.media and not comps.baja %}
+          <div class="p-3 text-muted small">Este rack no tiene compresores definidos. Defina cantidad en el admin.</div>
+          {% endif %}
+
+          {% endwith %}
         </div>
       </div>
       <div class="card mb-3">
