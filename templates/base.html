@@ -1,56 +1,75 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}SGMR{% endblock %}</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    :root { --sgmr-primary: #c30110; --sgmr-bg: #f8f9fa; }
-    body { min-height: 100vh; background: var(--sgmr-bg); }
-    .btn-tipo { min-height: 4rem; font-size: 1.1rem; }
-    .navbar-brand { font-weight: 600; }
+    :root {
+      --sgmr-primary: #c30110;
+      --sgmr-bg: #f8f9fa;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--sgmr-bg);
+    }
+
+    .btn-tipo {
+      min-height: 4rem;
+      font-size: 1.1rem;
+    }
+
+    .navbar-brand {
+      font-weight: 600;
+    }
   </style>
   {% block extra_css %}{% endblock %}
 </head>
+
 <body>
   {% if user.is_authenticated %}
   <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container-fluid">
-      <a class="navbar-brand d-flex align-items-center" href="{% if user.is_supervisor %}{% url 'analytics:dashboard' %}{% else %}{% url 'operations:scanner' %}{% endif %}">
-        <img src="{% static 'image/logo-olimpica2.png' %}" alt="SGMR" style="height: 35px;" onerror="this.style.display='none'; var s=document.createElement('span'); s.textContent='SGMR'; this.parentNode.appendChild(s);">
+      <a class="navbar-brand d-flex align-items-center"
+        href="{% if user.is_supervisor %}{% url 'analytics:dashboard' %}{% else %}{% url 'operations:scanner' %}{% endif %}">
+        <img src="{% static 'image/logo-olimpica2.png' %}" alt="SGMR" style="height: 35px;"
+          onerror="this.style.display='none'; var s=document.createElement('span'); s.textContent='SGMR'; this.parentNode.appendChild(s);">
       </a>
       <span class="navbar-text text-white position-absolute start-50 translate-middle-x">
-        {{ user.get_full_name|default:user.username }}
+        {{ user.get_full_name|default:user.nombre_completo }}
         {% if user.is_supervisor %}<span class="badge bg-light text-dark ms-1">Supervisor</span>{% endif %}
-      </span> 
+      </span>
       <div class="ms-auto d-flex align-items-center">
-      {% if user.is_supervisor %}
-      <a class="btn btn-outline-light btn-sm me-2" href="{% url 'analytics:dashboard' %}">Reportes</a>
-      {% else %}
-      <a class="btn btn-outline-light btn-sm me-2" href="{% url 'operations:scanner' %}">Escáner</a>
-      {% endif %}
-      <form action="{% url 'users:logout' %}" method="post" style="display:inline;">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-outline-light btn-sm">Salir</button>
-      </form>
+        {% if user.is_supervisor %}
+        <a class="btn btn-outline-light btn-sm me-2" href="{% url 'analytics:dashboard' %}">Reportes</a>
+        {% else %}
+        <a class="btn btn-outline-light btn-sm me-2" href="{% url 'operations:scanner' %}">Escáner</a>
+        {% endif %}
+        <form action="{% url 'users:logout' %}" method="post" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline-light btn-sm">Salir</button>
+        </form>
       </div>
     </div>
   </nav>
   {% endif %}
   <main class="container py-4">
     {% if messages %}
-      {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-      {% endfor %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
     {% endif %}
     {% block content %}{% endblock %}
   </main>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   {% block extra_js %}{% endblock %}
 </body>
+
 </html>
