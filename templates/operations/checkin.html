@@ -427,7 +427,7 @@
       <div class="section-card">
         <div class="section-header-bar">
           <div class="section-header-icon"><i class="bi bi-cpu"></i></div>
-          <span class="section-header-title">Inspección por Compresor</span>
+          <span class="section-header-title">Lectura de Amperajes</span>
         </div>
         <div class="gold-accent-line"></div>
 
@@ -442,13 +442,7 @@
             <thead>
               <tr>
                 <th style="width:42px; text-align:center;">C#</th>
-                <th>Corriente (A)</th>
-                <th>Estado Aceite</th>
-                <th>Nivel Aceite</th>
-                <th>Ruido mecánico</th>
-                <th class="text-center">Dispara por Aceite</th>
-                <th class="text-center">Dispara por Presión</th>
-                <th class="text-center">Traxoil Funcional</th>
+                <th>Corriente de Entrada (Amperios)</th>
               </tr>
             </thead>
             <tbody>
@@ -457,13 +451,7 @@
                 <td>
                   <div class="c-num media">{{ c.numero }}</div>
                 </td>
-                <td style="min-width:90px;">{{ c.corriente }}</td>
-                <td style="min-width:110px;">{{ c.estado_aceite }}</td>
-                <td style="min-width:110px;">{{ c.nivel_aceite }}</td>
-                <td style="min-width:110px;">{{ c.ruido }}</td>
-                <td class="text-center">{{ c.dispara_aceite }}</td>
-                <td class="text-center">{{ c.dispara_presion }}</td>
-                <td class="text-center">{{ c.funciona_traxoil }}</td>
+                <td style="min-width:150px;">{{ c.corriente }}</td>
               </tr>
               {% endfor %}
             </tbody>
@@ -480,13 +468,7 @@
             <thead>
               <tr>
                 <th style="width:42px; text-align:center;">C#</th>
-                <th>Corriente (A)</th>
-                <th>Estado Aceite</th>
-                <th>Nivel Aceite</th>
-                <th>Ruido mecánico</th>
-                <th class="text-center">Dispara por Aceite</th>
-                <th class="text-center">Dispara por Presión</th>
-                <th class="text-center">Traxoil Funcional</th>
+                <th>Corriente de Entrada (Amperios)</th>
               </tr>
             </thead>
             <tbody>
@@ -495,13 +477,7 @@
                 <td>
                   <div class="c-num baja">{{ c.numero }}</div>
                 </td>
-                <td style="min-width:90px;">{{ c.corriente }}</td>
-                <td style="min-width:110px;">{{ c.estado_aceite }}</td>
-                <td style="min-width:110px;">{{ c.nivel_aceite }}</td>
-                <td style="min-width:110px;">{{ c.ruido }}</td>
-                <td class="text-center">{{ c.dispara_aceite }}</td>
-                <td class="text-center">{{ c.dispara_presion }}</td>
-                <td class="text-center">{{ c.funciona_traxoil }}</td>
+                <td style="min-width:150px;">{{ c.corriente }}</td>
               </tr>
               {% endfor %}
             </tbody>
@@ -512,52 +488,18 @@
         {% if not comps.media and not comps.baja %}
         <div class="p-3 text-muted small">
           <i class="bi bi-info-circle me-1"></i>
-          Este rack no tiene compresores definidos. Defina cantidad en el admin.
+          Este rack no tiene compresores definidos.
         </div>
         {% endif %}
 
         {% endwith %}
       </div>
 
-      <!-- ── PRESIONES ── -->
-      <div class="section-card">
-        <div class="section-header-bar">
-          <div class="section-header-icon"><i class="bi bi-speedometer2"></i></div>
-          <span class="section-header-title">Presiones</span>
-        </div>
-        <div class="gold-accent-line"></div>
-
-        <div class="p-3">
-          <div class="row g-3">
-            <div class="col-12 col-md-6 col-lg-4">
-              <label class="form-label">Presión succión media temperatura (psi)</label>
-              {{ form.presion_succion_media }}
-            </div>
-            <div class="col-12 col-md-6 col-lg-4">
-              <label class="form-label">Presión succión baja temperatura (psi)</label>
-              {{ form.presion_succion_baja }}
-            </div>
-            <div class="col-12 col-md-6 col-lg-4">
-              <label class="form-label">Presión descarga (psi)</label>
-              {{ form.presion_descarga }}
-            </div>
-            <div class="col-12 col-md-6 col-lg-4">
-              <label class="form-label">Presión entrada condensación (psi)</label>
-              {{ form.presion_entrada_condensacion }}
-            </div>
-            <div class="col-12 col-md-6 col-lg-4">
-              <label class="form-label">Presión salida condensación (psi)</label>
-              {{ form.presion_salida_condensacion }}
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- ── FOOTER ACTIONS ── -->
       <div class="form-footer">
         <div class="footer-icontec-note">
           <i class="bi bi-patch-check-fill"></i>
-          Proceso auditado · Sello Sostenibilidad ORO ICONTEC
+          Proceso auditado · Sello ORO ICONTEC
         </div>
         <div class="d-flex align-items-center gap-3">
           <form method="post" action="{% url 'operations:saltar_checkin' registro_id=registro.pk %}">

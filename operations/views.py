@@ -247,6 +247,31 @@ class IntervencionPDFView(View):
             'fecha': registro.hora_fin or registro.hora_inicio,
         }
 
+        # Mapeo de legibilidad para campos generales del Rack
+        mapeo_rack = {
+            'ajuste_refrigerante': {'si': 'SÍ', 'no': 'NO'},
+            'condensador_limpio': {'limpio': 'LIMPIO', 'sucio': 'SUCIO'},
+            'nivel_acumulador': {'alto': 'ALTO', 'medio': 'MEDIO', 'bajo': 'BAJO'},
+            'ventiladores_condensadora': {
+                'todos_ok': 'TODOS OPERATIVOS',
+                'un_averiado': 'UN VENTILADOR AVERIADO',
+                'varios_averiados': 'MÁS DE UN VENTILADOR AVERIADO'
+            },
+            'aislamiento_tuberias': {'bueno': 'BUENAS CONDICIONES', 'malo': 'MALAS CONDICIONES'},
+            'valvulas_cierre': {'bueno': 'BUENAS CONDICIONES', 'malo': 'MALAS CONDICIONES'},
+            'manifolds_recibidores': {'bueno': 'BUENAS CONDICIONES', 'malo': 'MALAS CONDICIONES'},
+        }
+        
+        # Crear un diccionario con valores legibles
+        readable = {}
+        for key, val in datos.items():
+            if key in mapeo_rack and val in mapeo_rack[key]:
+                readable[key] = mapeo_rack[key][val]
+            else:
+                readable[key] = val
+        
+        context['readable'] = readable
+
         # Renderizar a PDF
         template = get_template('operations/reporte_pdf.html')
         html = template.render(context)

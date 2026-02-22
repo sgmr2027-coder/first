@@ -305,88 +305,88 @@
     <!-- INSPECCIÓN TÉCNICA -->
     <div class="section-bar">Inspección Detallada por Compresor</div>
 
-    <table class="tables-container">
-        <tr>
-            <!-- MEDIA TEMPERATURA -->
-            <td class="table-column">
-                <div class="comp-header media-header">&#9650; Media Temperatura</div>
-                <table class="tech-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 7%;">N°</th>
-                            <th style="width: 25%;">Modelo</th>
-                            <th style="width: 23%;">Serie</th>
-                            <th style="width: 9%;">Corriente</th>
-                            <th style="width: 9%;">Aceite</th>
-                            <th style="width: 9%;">Nivel</th>
-                            <th style="width: 9%;">Ruido</th>
-                            <th style="width: 9%;">Traxoil</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for c in compresores_media %}
-                        <tr {% if forloop.counter|divisibleby:2 %}class="even" {% endif %}>
-                            <td><span class="c-badge media-badge">{{ c.numero }}</span></td>
-                            <td class="td-modelo">{{ c.modelo }}</td>
-                            <td class="td-serie">{{ c.serie }}</td>
-                            <td class="td-bold">{{ c.corriente }}</td>
-                            <td>{{ c.estado_aceite|upper }}</td>
-                            <td>{{ c.nivel_aceite|upper }}</td>
-                            <td>{{ c.ruido|upper }}</td>
-                            <td>{{ c.funciona_traxoil|upper }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="8" style="padding:10px; color:#6B7DA0;">No aplica</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </td>
+    <!-- MEDIA TEMPERATURA -->
+    <div class="comp-header media-header" style="margin-top: 5px;">&#9650; Media Temperatura</div>
+    <table class="tech-table">
+        <thead>
+            <tr>
+                <th style="width: 4%;">N°</th>
+                <th style="width: 22%; text-align: left;">Modelo</th>
+                <th style="width: 20%;">Serie</th>
+                <th style="width: 8%;">Corriente</th>
+                <th style="width: 8%;">Aceite</th>
+                <th style="width: 8%;">Nivel</th>
+                <th style="width: 8%;">Ruido</th>
+                <th style="width: 8%;">Dispara por Aceite</th>
+                <th style="width: 8%;">Dispara por Presión</th>
+                <th style="width: 6%;">Traxoil</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in compresores_media %}
+            <tr {% if forloop.counter|divisibleby:2 %}class="even" {% endif %}>
+                <td style="text-align:center;"><span class="c-badge media-badge">{{ c.numero }}</span></td>
+                <td class="td-modelo">{{ c.modelo }}</td>
+                <td class="td-serie">{{ c.serie }}</td>
+                <td class="td-bold">{{ c.corriente }}</td>
+                <td>{{ c.estado_aceite|upper }}</td>
+                <td>{{ c.nivel_aceite|upper }}</td>
+                <td>{{ c.ruido|upper }}</td>
+                <td>{{ c.dispara_aceite|upper }}</td>
+                <td>{{ c.dispara_presion|upper }}</td>
+                <td>{{ c.funciona_traxoil|upper }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="10" style="padding:8px; color:#6B7DA0; text-align:center;">No aplica / No hay compresores
+                    de Media</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
-            <td class="spacer"></td>
-
-            <!-- BAJA TEMPERATURA -->
-            <td class="table-column">
-                <div class="comp-header baja-header">&#9660; Baja Temperatura</div>
-                <table class="tech-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 7%;">N°</th>
-                            <th style="width: 25%;">Modelo</th>
-                            <th style="width: 23%;">Serie</th>
-                            <th style="width: 9%;">Corriente</th>
-                            <th style="width: 9%;">Aceite</th>
-                            <th style="width: 9%;">Nivel</th>
-                            <th style="width: 9%;">Ruido</th>
-                            <th style="width: 9%;">Traxoil</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for c in compresores_baja %}
-                        <tr {% if forloop.counter|divisibleby:2 %}class="even" {% endif %}>
-                            <td><span class="c-badge baja-badge">{{ c.numero }}</span></td>
-                            <td class="td-modelo">{{ c.modelo }}</td>
-                            <td class="td-serie">{{ c.serie }}</td>
-                            <td class="td-bold">{{ c.corriente }}</td>
-                            <td>{{ c.estado_aceite|upper }}</td>
-                            <td>{{ c.nivel_aceite|upper }}</td>
-                            <td>{{ c.ruido|upper }}</td>
-                            <td>{{ c.funciona_traxoil|upper }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="8" style="padding:10px; color:#6B7DA0;">No aplica</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </td>
-        </tr>
+    <!-- BAJA TEMPERATURA -->
+    <div class="comp-header baja-header" style="margin-top: 8px;">&#9660; Baja Temperatura</div>
+    <table class="tech-table">
+        <thead>
+            <tr>
+                <th style="width: 4%;">N°</th>
+                <th style="width: 22%; text-align: left;">Modelo</th>
+                <th style="width: 20%;">Serie</th>
+                <th style="width: 8%;">Corriente</th>
+                <th style="width: 8%;">Aceite</th>
+                <th style="width: 8%;">Nivel</th>
+                <th style="width: 8%;">Ruido</th>
+                <th style="width: 8%;">D. Aceite</th>
+                <th style="width: 8%;">D. Pres</th>
+                <th style="width: 6%;">Traxoil</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in compresores_baja %}
+            <tr {% if forloop.counter|divisibleby:2 %}class="even" {% endif %}>
+                <td style="text-align:center;"><span class="c-badge baja-badge">{{ c.numero }}</span></td>
+                <td class="td-modelo">{{ c.modelo }}</td>
+                <td class="td-serie">{{ c.serie }}</td>
+                <td class="td-bold">{{ c.corriente }}</td>
+                <td>{{ c.estado_aceite|upper }}</td>
+                <td>{{ c.nivel_aceite|upper }}</td>
+                <td>{{ c.ruido|upper }}</td>
+                <td>{{ c.dispara_aceite|upper }}</td>
+                <td>{{ c.dispara_presion|upper }}</td>
+                <td>{{ c.funciona_traxoil|upper }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="10" style="padding:8px; color:#6B7DA0; text-align:center;">No aplica / No hay compresores
+                    de Baja</td>
+            </tr>
+            {% endfor %}
+        </tbody>
     </table>
 
     <!-- PARÁMETROS OPERATIVOS -->
-    <div class="section-bar">Parámetros de Operación y Voltajes</div>
+    <div class="section-bar" style="margin-top: 8px;">Parámetros de Operación y Voltajes</div>
     <table class="info-table" style="margin-top: 4px;">
         <tr>
             <td class="lbl"> Presión Succión Media</td>
@@ -401,8 +401,37 @@
             <td class="val">{{ datos.presion_entrada_condensacion|default:"—" }} psi</td>
             <td class="lbl">Presión Salida Cond.</td>
             <td class="val">{{ datos.presion_salida_condensacion|default:"—" }} psi</td>
-            <td class="lbl">Delta P</td>
-            <td class="val">—</td>
+            <td class="lbl"></td>
+            <td class="val"></td>
+        </tr>
+    </table>
+
+    <!-- ESTADO GENERAL DEL RACK -->
+    <div class="section-bar" style="margin-top: 8px;">Estado General de Componentes del Rack</div>
+    <table class="info-table" style="margin-top: 4px;">
+        <tr>
+            <td class="lbl">Nivel Acumulador</td>
+            <td class="val">{{ readable.nivel_acumulador|default:"—" }}</td>
+            <td class="lbl">Ajuste Refrigerante</td>
+            <td class="val">{{ readable.ajuste_refrigerante|default:"—" }}</td>
+            <td class="lbl">Condensador Rack</td>
+            <td class="val">{{ readable.condensador_limpio|default:"—" }}</td>
+        </tr>
+        <tr>
+            <td class="lbl">Ventiladores Cond.</td>
+            <td class="val">{{ readable.ventiladores_condensadora|default:"—" }}</td>
+            <td class="lbl">Aislamiento Tub.</td>
+            <td class="val">{{ readable.aislamiento_tuberias|default:"—" }}</td>
+            <td class="lbl">Válvulas Cierre</td>
+            <td class="val">{{ readable.valvulas_cierre|default:"—" }}</td>
+        </tr>
+        <tr>
+            <td class="lbl">Manifolds / Recibidores</td>
+            <td class="val">{{ readable.manifolds_recibidores|default:"—" }}</td>
+            <td class="lbl"></td>
+            <td class="val"></td>
+            <td class="lbl"></td>
+            <td class="val"></td>
         </tr>
     </table>
 

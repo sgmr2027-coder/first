@@ -471,6 +471,48 @@
         <div class="obs-body">{{ form_cierre.observaciones }}</div>
       </div>
 
+      <!-- INSPECCIÓN GENERAL DEL RACK -->
+      <div class="section-card">
+        <div class="section-header-bar"
+          style="background: linear-gradient(90deg, var(--green-dark, #2D4A3E), #4A7060);">
+          <div class="section-header-icon"><i class="bi bi-list-check"></i></div>
+          <span class="section-header-title">Inspección de Componentes del Rack</span>
+        </div>
+        <div class="gold-accent-line"></div>
+        <div class="p-3">
+          <div class="row g-3">
+            <div class="col-12 col-md-6 col-lg-4">
+              <label class="form-label">Nivel acumulador de refrigerante</label>
+              {{ form_salida.nivel_acumulador }}
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+              <label class="form-label">¿Realizó ajuste de refrigerante?</label>
+              {{ form_salida.ajuste_refrigerante }}
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+              <label class="form-label">Estado condensador del rack</label>
+              {{ form_salida.condensador_limpio }}
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+              <label class="form-label">Estado ventiladores condensadora</label>
+              {{ form_salida.ventiladores_condensadora }}
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+              <label class="form-label">Estado aislamiento de tuberías</label>
+              {{ form_salida.aislamiento_tuberias }}
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+              <label class="form-label">Estado válvulas de cierre</label>
+              {{ form_salida.valvulas_cierre }}
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+              <label class="form-label">Manifolds y recibidores</label>
+              {{ form_salida.manifolds_recibidores }}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- PARÁMETROS FINALES -->
       <div class="section-card">
         <div class="section-header-bar">
