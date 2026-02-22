@@ -7,8 +7,8 @@
 
     {% if tarea_abierta %}
     <div class="alert alert-warning">
-      <strong>Tienes abierta una actividad en otro equipo, ciérrala para avanzar con otro en:</strong> {{
-      tarea_abierta.rack }}.
+      <strong>Tienes abierta una actividad en otro equipo, ciérrala para avanzar con otro en:</strong>
+      {{tarea_abierta.rack }}.
       <a href="{% url 'operations:checkin' registro_id=tarea_abierta.pk %}">Ir a parámetros de entrada</a> o
       <a href="{% url 'operations:checkout' registro_id=tarea_abierta.pk %}">Ir a cierre</a>.
     </div>
