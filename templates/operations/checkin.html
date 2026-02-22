@@ -1,127 +1,597 @@
 {% extends 'base.html' %}
 {% block title %}Parámetros de entrada — SGMR{% endblock %}
+
+{% block extra_css %}
+<link
+  href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap"
+  rel="stylesheet">
+<style>
+  /* ── TOKENS ── */
+  :root {
+    --ol-blue: #0047BB;
+    --ol-blue-dark: #003490;
+    --ol-blue-light: #E8EFFD;
+    --ol-red: #E30613;
+    --gold: #C8972A;
+    --gold-light: #E8B84B;
+    --gold-pale: #FDF6E3;
+    --gold-border: #E2C97A;
+    --green-dark: #2D4A3E;
+    --gray-50: #F7F9FC;
+    --gray-100: #EEF2F8;
+    --gray-200: #D8E0EE;
+    --gray-500: #6B7DA0;
+    --gray-800: #1E2A45;
+  }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-800);
+  }
+
+  /* ── PAGE HEADER ── */
+  .page-header {
+    background: #fff;
+    border-bottom: 1px solid var(--gray-200);
+    padding: .85rem 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .page-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--ol-blue);
+    margin: 0;
+    line-height: 1.2;
+  }
+
+  .badge-checkin {
+    background: var(--ol-blue);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    vertical-align: middle;
+  }
+
+  .rack-tag {
+    background: var(--ol-blue-light);
+    color: var(--ol-blue);
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 4px;
+    padding: 2px 8px;
+  }
+
+  .maint-tag {
+    background: var(--gold-pale);
+    color: var(--gold);
+    border: 1px solid var(--gold-border);
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 4px;
+    padding: 2px 8px;
+  }
+
+  /* ── SECTION CARD ── */
+  .section-card {
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 71, 187, .07);
+    margin-bottom: 1.25rem;
+    background: #fff;
+  }
+
+  .section-header-bar {
+    background: linear-gradient(90deg, var(--ol-blue-dark), var(--ol-blue));
+    padding: 11px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-header-icon {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, .15);
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 14px;
+  }
+
+  .section-header-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    color: #fff;
+    margin: 0;
+  }
+
+  .section-header-bar .icontec-note {
+    margin-left: auto;
+    font-size: 10px;
+    color: rgba(255, 255, 255, .5);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .icontec-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--gold-light);
+    display: inline-block;
+  }
+
+  .gold-accent-line {
+    height: 3px;
+    background: linear-gradient(90deg, var(--gold) 0%, var(--gold-light) 50%, transparent 100%);
+  }
+
+  /* ── TEMP DIVIDER ── */
+  .temp-divider {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 18px 8px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .temp-divider::after {
+    content: '';
+    flex: 1;
+    height: 2px;
+    border-radius: 1px;
+  }
+
+  .temp-divider.media {
+    color: var(--ol-red);
+  }
+
+  .temp-divider.media::after {
+    background: linear-gradient(90deg, var(--ol-red), transparent);
+  }
+
+  .temp-divider.baja {
+    color: #0077CC;
+  }
+
+  .temp-divider.baja::after {
+    background: linear-gradient(90deg, #0077CC, transparent);
+  }
+
+  /* ── TABLE ── */
+  .comp-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 0;
+  }
+
+  .comp-table thead th {
+    background: var(--gray-100);
+    padding: 8px 10px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--gray-500);
+    border-bottom: 2px solid var(--gray-200);
+    white-space: nowrap;
+  }
+
+  .comp-table tbody tr {
+    transition: background .12s;
+  }
+
+  .comp-table tbody tr:hover {
+    background: var(--ol-blue-light);
+  }
+
+  .comp-table tbody tr:not(:last-child) td {
+    border-bottom: 1px solid var(--gray-100);
+  }
+
+  .comp-table tbody td {
+    padding: 8px 10px;
+    vertical-align: middle;
+  }
+
+  .c-num {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    display: grid;
+    place-items: center;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 auto;
+  }
+
+  .c-num.media {
+    background: var(--ol-red);
+  }
+
+  .c-num.baja {
+    background: #0077CC;
+  }
+
+  /* Form controls dentro de tabla */
+  .comp-table .form-control,
+  .comp-table .form-select {
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px;
+    border-color: var(--gray-200);
+    background: var(--gray-50);
+    border-radius: 6px;
+    padding: 5px 8px;
+    transition: border-color .15s, box-shadow .15s;
+  }
+
+  .comp-table .form-control:focus,
+  .comp-table .form-select:focus {
+    border-color: var(--ol-blue);
+    box-shadow: 0 0 0 3px rgba(0, 71, 187, .1);
+    background: #fff;
+  }
+
+  /* ── PRESIONES CARD ── */
+  .section-card .form-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    margin-bottom: 4px;
+  }
+
+  .section-card .form-control {
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px;
+    border-color: var(--gray-200);
+    background: var(--gray-50);
+    border-radius: 6px;
+    transition: border-color .15s, box-shadow .15s;
+  }
+
+  .section-card .form-control:focus {
+    border-color: var(--ol-blue);
+    box-shadow: 0 0 0 3px rgba(0, 71, 187, .1);
+    background: #fff;
+  }
+
+  /* ── FOOTER ACTIONS ── */
+  .form-footer {
+    background: #fff;
+    border-top: 1px solid var(--gray-200);
+    padding: 12px 20px;
+    position: sticky;
+    bottom: 0;
+    box-shadow: 0 -4px 16px rgba(0, 71, 187, .08);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .footer-icontec-note {
+    font-size: 11px;
+    color: var(--gold);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-guardar {
+    background: linear-gradient(135deg, var(--ol-blue-dark), var(--ol-blue));
+    border: none;
+    color: #fff;
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 9px 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    position: relative;
+    overflow: hidden;
+    transition: all .2s;
+    text-decoration: none;
+  }
+
+  .btn-guardar::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
+  }
+
+  .btn-guardar:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(0, 71, 187, .28);
+    color: #fff;
+  }
+
+  .btn-skip {
+    font-size: 12px;
+    color: var(--gray-500);
+    text-decoration: none;
+    font-weight: 500;
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    transition: color .15s;
+  }
+
+  .btn-skip:hover {
+    color: var(--ol-blue);
+    text-decoration: underline;
+  }
+
+  /* Progress bar dorada */
+  .progress-strip {
+    height: 3px;
+    background: var(--gray-100);
+    position: sticky;
+    top: 0;
+    z-index: 49;
+  }
+
+  .progress-strip .fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    transition: width .4s ease;
+  }
+
+  /* Animación entrada */
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .section-card {
+    animation: fadeUp .35s ease both;
+  }
+
+  .section-card:nth-child(2) {
+    animation-delay: .07s;
+  }
+
+  .section-card:nth-child(3) {
+    animation-delay: .14s;
+  }
+</style>
+{% endblock %}
+
 {% block content %}
+
+<!-- Barra progreso dorada -->
+<div class="progress-strip">
+  <div class="fill" id="progressFill"></div>
+</div>
+
+<!-- Page header -->
+<div class="page-header">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <h2 class="page-title">Parámetros de Entrada <span class="badge-checkin">Check-in</span></h2>
+    </div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <span class="rack-tag"><i class="bi bi-server me-1"></i>{{ registro.rack }}</span>
+      <span class="text-muted" style="font-size:12px;">—</span>
+      <span class="maint-tag"><i class="bi bi-tools me-1"></i>{{ registro.get_tipo_actividad_display }}</span>
+    </div>
+  </div>
+</div>
+
 <div class="row">
   <div class="col-12">
-    <h2 class="h5 mb-3">Parámetros de entrada (Check-in)</h2>
-    <p class="text-muted">{{ registro.rack }} — {{ registro.get_tipo_actividad_display }}</p>
-    <form method="post">
+    <form method="post" id="checkinForm">
       {% csrf_token %}
-      <div class="card mb-3">
-        <div class="card-header">Inspección por Compresor</div>
-        <div class="card-body p-0">
-          {% with comps=form.get_compresores %}
 
-          {% if comps.media %}
-          <div class="p-2 bg-light border-bottom"><strong>Media Temperatura</strong></div>
-          <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th style="width: 40px;">C#</th>
-                  <th>Corriente (A)</th>
-                  <th>Aceite</th>
-                  <th>Nivel</th>
-                  <th>Ruido</th>
-                  <th class="text-center">Dispara por Aceite</th>
-                  <th class="text-center">Dispara por Presión</th>
-                  <th class="text-center">Traxoil Funcional</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for c in comps.media %}
-                <tr>
-                  <td class="fw-bold">{{ c.numero }}</td>
-                  <td style="min-width: 90px;">{{ c.corriente }}</td>
-                  <td style="min-width: 100px;">{{ c.estado_aceite }}</td>
-                  <td style="min-width: 100px;">{{ c.nivel_aceite }}</td>
-                  <td style="min-width: 100px;">{{ c.ruido }}</td>
-                  <td class="text-center">{{ c.dispara_aceite }}</td>
-                  <td class="text-center">{{ c.dispara_presion }}</td>
-                  <td class="text-center">{{ c.funciona_traxoil }}</td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-          {% endif %}
-
-          {% if comps.baja %}
-          <div class="p-2 bg-light border-bottom {% if comps.media %}mt-2{% endif %}"><strong>Baja Temperatura</strong>
-          </div>
-          <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th style="width: 40px;">C#</th>
-                  <th>Corriente (A)</th>
-                  <th>Aceite</th>
-                  <th>Nivel</th>
-                  <th>Ruido</th>
-                  <th class="text-center">Dispara por Aceite</th>
-                  <th class="text-center">Dispara por Presión</th>
-                  <th class="text-center">Traxoil Funcional</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for c in comps.baja %}
-                <tr>
-                  <td class="fw-bold">{{ c.numero }}</td>
-                  <td style="min-width: 90px;">{{ c.corriente }}</td>
-                  <td style="min-width: 100px;">{{ c.estado_aceite }}</td>
-                  <td style="min-width: 100px;">{{ c.nivel_aceite }}</td>
-                  <td style="min-width: 100px;">{{ c.ruido }}</td>
-                  <td class="text-center">{{ c.dispara_aceite }}</td>
-                  <td class="text-center">{{ c.dispara_presion }}</td>
-                  <td class="text-center">{{ c.funciona_traxoil }}</td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-          {% endif %}
-
-          {% if not comps.media and not comps.baja %}
-          <div class="p-3 text-muted small">Este rack no tiene compresores definidos. Defina cantidad en el admin.</div>
-          {% endif %}
-
-          {% endwith %}
+      <!-- ── COMPRESORES ── -->
+      <div class="section-card">
+        <div class="section-header-bar">
+          <div class="section-header-icon"><i class="bi bi-cpu"></i></div>
+          <span class="section-header-title">Inspección por Compresor</span>
         </div>
+        <div class="gold-accent-line"></div>
+
+        {% with comps=form.get_compresores %}
+
+        {% if comps.media %}
+        <div class="temp-divider media">
+          <i class="bi bi-thermometer-high"></i> Media Temperatura
+        </div>
+        <div class="table-responsive px-3 pb-2">
+          <table class="comp-table">
+            <thead>
+              <tr>
+                <th style="width:42px; text-align:center;">C#</th>
+                <th>Corriente (A)</th>
+                <th>Estado Aceite</th>
+                <th>Nivel Aceite</th>
+                <th>Ruido mecánico</th>
+                <th class="text-center">Dispara por Aceite</th>
+                <th class="text-center">Dispara por Presión</th>
+                <th class="text-center">Traxoil Funcional</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in comps.media %}
+              <tr>
+                <td>
+                  <div class="c-num media">{{ c.numero }}</div>
+                </td>
+                <td style="min-width:90px;">{{ c.corriente }}</td>
+                <td style="min-width:110px;">{{ c.estado_aceite }}</td>
+                <td style="min-width:110px;">{{ c.nivel_aceite }}</td>
+                <td style="min-width:110px;">{{ c.ruido }}</td>
+                <td class="text-center">{{ c.dispara_aceite }}</td>
+                <td class="text-center">{{ c.dispara_presion }}</td>
+                <td class="text-center">{{ c.funciona_traxoil }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+
+        {% if comps.baja %}
+        <div class="temp-divider baja {% if comps.media %}mt-1{% endif %}">
+          <i class="bi bi-thermometer-low"></i> Baja Temperatura
+        </div>
+        <div class="table-responsive px-3 pb-3">
+          <table class="comp-table">
+            <thead>
+              <tr>
+                <th style="width:42px; text-align:center;">C#</th>
+                <th>Corriente (A)</th>
+                <th>Estado Aceite</th>
+                <th>Nivel Aceite</th>
+                <th>Ruido mecánico</th>
+                <th class="text-center">Dispara por Aceite</th>
+                <th class="text-center">Dispara por Presión</th>
+                <th class="text-center">Traxoil Funcional</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in comps.baja %}
+              <tr>
+                <td>
+                  <div class="c-num baja">{{ c.numero }}</div>
+                </td>
+                <td style="min-width:90px;">{{ c.corriente }}</td>
+                <td style="min-width:110px;">{{ c.estado_aceite }}</td>
+                <td style="min-width:110px;">{{ c.nivel_aceite }}</td>
+                <td style="min-width:110px;">{{ c.ruido }}</td>
+                <td class="text-center">{{ c.dispara_aceite }}</td>
+                <td class="text-center">{{ c.dispara_presion }}</td>
+                <td class="text-center">{{ c.funciona_traxoil }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+
+        {% if not comps.media and not comps.baja %}
+        <div class="p-3 text-muted small">
+          <i class="bi bi-info-circle me-1"></i>
+          Este rack no tiene compresores definidos. Defina cantidad en el admin.
+        </div>
+        {% endif %}
+
+        {% endwith %}
       </div>
-      <div class="card mb-3">
-        <div class="card-header">Presiones</div>
-        <div class="card-body">
-          <div class="row g-2">
+
+      <!-- ── PRESIONES ── -->
+      <div class="section-card">
+        <div class="section-header-bar">
+          <div class="section-header-icon"><i class="bi bi-speedometer2"></i></div>
+          <span class="section-header-title">Presiones</span>
+        </div>
+        <div class="gold-accent-line"></div>
+
+        <div class="p-3">
+          <div class="row g-3">
             <div class="col-12 col-md-6 col-lg-4">
-              <label class="form-label small">Presión succión media temperatura (psi)</label>
+              <label class="form-label">Presión succión media temperatura (psi)</label>
               {{ form.presion_succion_media }}
             </div>
             <div class="col-12 col-md-6 col-lg-4">
-              <label class="form-label small">Presión succión baja temperatura (psi)</label>
+              <label class="form-label">Presión succión baja temperatura (psi)</label>
               {{ form.presion_succion_baja }}
             </div>
             <div class="col-12 col-md-6 col-lg-4">
-              <label class="form-label small">Presión descarga (psi)</label>
+              <label class="form-label">Presión descarga (psi)</label>
               {{ form.presion_descarga }}
             </div>
             <div class="col-12 col-md-6 col-lg-4">
-              <label class="form-label small">Presión entrada condensación (psi)</label>
+              <label class="form-label">Presión entrada condensación (psi)</label>
               {{ form.presion_entrada_condensacion }}
             </div>
             <div class="col-12 col-md-6 col-lg-4">
-              <label class="form-label small">Presión salida condensación (psi)</label>
+              <label class="form-label">Presión salida condensación (psi)</label>
               {{ form.presion_salida_condensacion }}
             </div>
           </div>
         </div>
       </div>
-      <button type="submit" class="btn btn-primary">Guardar y continuar a cierre</button>
-    </form>
 
-    <form method="post" action="{% url 'operations:saltar_checkin' registro_id=registro.pk %}" class="mt-2">
-      {% csrf_token %}
-      <button type="submit" class="btn btn-link p-0">Ir directo a cierre (marcar parámetros como No medidos)</button>
+      <!-- ── FOOTER ACTIONS ── -->
+      <div class="form-footer">
+        <div class="footer-icontec-note">
+          <i class="bi bi-patch-check-fill"></i>
+          Proceso auditado · Sello Sostenibilidad ORO ICONTEC
+        </div>
+        <div class="d-flex align-items-center gap-3">
+          <form method="post" action="{% url 'operations:saltar_checkin' registro_id=registro.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn-skip">
+              <i class="bi bi-skip-forward me-1"></i>Ir directo a cierre
+            </button>
+          </form>
+          <button type="submit" class="btn-guardar" form="checkinForm">
+            <i class="bi bi-check-lg"></i> Guardar y continuar
+          </button>
+        </div>
+      </div>
+
     </form>
   </div>
 </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Barra de progreso dorada según campos completados
+  const inputs = document.querySelectorAll('#checkinForm input, #checkinForm select');
+  const fill = document.getElementById('progressFill');
+
+  function updateProgress() {
+    let done = 0;
+    inputs.forEach(el => { if (el.value && el.value !== '') done++; });
+    fill.style.width = inputs.length ? Math.round((done / inputs.length) * 100) + '%' : '0%';
+  }
+
+  inputs.forEach(el => el.addEventListener('change', updateProgress));
+  inputs.forEach(el => el.addEventListener('input', updateProgress));
+  updateProgress();
+</script>
 {% endblock %}

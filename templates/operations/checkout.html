@@ -1,147 +1,655 @@
 {% extends 'base.html' %}
 {% block title %}Cierre de actividad — SGMR{% endblock %}
+
+{% block extra_css %}
+<link
+  href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap"
+  rel="stylesheet">
+<style>
+  /* ══════════════════════════════════════
+     PALETA OLÍMPICA S.A. + ICONTEC ORO
+     Azul  · Rojo · Blanco · Dorado · Gris
+  ══════════════════════════════════════ */
+  :root {
+    /* Azul corporativo */
+    --ol-blue: #0047BB;
+    --ol-blue-dark: #003490;
+    --ol-blue-light: #E8EFFD;
+
+    /* Rojo corporativo */
+    --ol-red: #E30613;
+
+    /* Dorado ICONTEC */
+    --gold: #C8972A;
+    --gold-light: #E8B84B;
+    --gold-pale: #FDF6E3;
+    --gold-border: #E2C97A;
+
+    /* Gris antracita — identifica el Check-out */
+    --charcoal: #2E3A4E;
+    --charcoal-dark: #1A2333;
+    --charcoal-light: #EDF0F4;
+    --charcoal-border: #C2CAD6;
+
+    /* Grises UI */
+    --gray-50: #F7F9FC;
+    --gray-100: #EEF2F8;
+    --gray-200: #D8E0EE;
+    --gray-500: #6B7DA0;
+    --gray-800: #1E2A45;
+
+    --white: #FFFFFF;
+  }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-800);
+  }
+
+  /* ── BARRA PROGRESO dorada ── */
+  .progress-strip {
+    height: 3px;
+    background: var(--gray-100);
+    position: sticky;
+    top: 0;
+    z-index: 49;
+  }
+
+  .progress-strip .fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    transition: width .4s ease;
+  }
+
+  /* ── PAGE HEADER ── */
+  .page-header {
+    background: var(--white);
+    border-bottom: 1px solid var(--gray-200);
+    padding: .85rem 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .page-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--charcoal);
+    margin: 0;
+    line-height: 1.2;
+  }
+
+  .badge-checkout {
+    background: var(--charcoal);
+    color: var(--white);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    vertical-align: middle;
+  }
+
+  .rack-tag {
+    background: var(--ol-blue-light);
+    color: var(--ol-blue);
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 4px;
+    padding: 2px 8px;
+  }
+
+  .maint-tag {
+    background: var(--gold-pale);
+    color: var(--gold);
+    border: 1px solid var(--gold-border);
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 4px;
+    padding: 2px 8px;
+  }
+
+  /* ── SECTION CARD ── */
+  .section-card {
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px rgba(0, 71, 187, .07);
+    margin-bottom: 1.25rem;
+    background: var(--white);
+    animation: fadeUp .35s ease both;
+  }
+
+  .section-card:nth-child(2) {
+    animation-delay: .07s;
+  }
+
+  .section-card:nth-child(3) {
+    animation-delay: .14s;
+  }
+
+  /* Header azul — compresores/presiones */
+  .section-header-bar {
+    background: linear-gradient(90deg, var(--ol-blue-dark), var(--ol-blue));
+    padding: 11px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Header gris antracita — observaciones */
+  .section-header-bar.charcoal {
+    background: linear-gradient(90deg, var(--charcoal-dark), var(--charcoal));
+  }
+
+  .section-header-icon {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, .15);
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    color: var(--white);
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .section-header-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    color: var(--white);
+    margin: 0;
+  }
+
+  .icontec-note {
+    margin-left: auto;
+    font-size: 10px;
+    color: rgba(255, 255, 255, .5);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .icontec-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--gold-light);
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  /* Líneas de acento bajo headers */
+  .gold-accent-line {
+    height: 3px;
+    background: linear-gradient(90deg, var(--gold) 0%, var(--gold-light) 50%, transparent 100%);
+  }
+
+  .charcoal-accent-line {
+    height: 3px;
+    background: linear-gradient(90deg, var(--charcoal) 0%, var(--charcoal-border) 50%, transparent 100%);
+  }
+
+  /* ── OBSERVACIONES ── */
+  .obs-body {
+    padding: 1rem;
+  }
+
+  .obs-body textarea {
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px;
+    border-color: var(--gray-200);
+    background: var(--gray-50);
+    border-radius: 8px;
+    resize: vertical;
+    transition: border-color .15s, box-shadow .15s;
+  }
+
+  .obs-body textarea:focus {
+    border-color: var(--charcoal);
+    box-shadow: 0 0 0 3px rgba(46, 58, 78, .12);
+    background: var(--white);
+    outline: none;
+  }
+
+  /* ── TEMP DIVIDER ── */
+  .temp-divider {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 18px 8px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .temp-divider::after {
+    content: '';
+    flex: 1;
+    height: 2px;
+    border-radius: 1px;
+  }
+
+  /* Rojo = media */
+  .temp-divider.media {
+    color: var(--ol-red);
+  }
+
+  .temp-divider.media::after {
+    background: linear-gradient(90deg, var(--ol-red), transparent);
+  }
+
+  /* Azul = baja */
+  .temp-divider.baja {
+    color: var(--ol-blue);
+  }
+
+  .temp-divider.baja::after {
+    background: linear-gradient(90deg, var(--ol-blue), transparent);
+  }
+
+  /* ── TABLE ── */
+  .comp-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 0;
+  }
+
+  .comp-table thead th {
+    background: var(--gray-100);
+    padding: 8px 10px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--gray-500);
+    border-bottom: 2px solid var(--gray-200);
+    white-space: nowrap;
+  }
+
+  .comp-table tbody tr {
+    transition: background .12s;
+  }
+
+  .comp-table tbody tr:hover {
+    background: var(--charcoal-light);
+  }
+
+  .comp-table tbody tr:not(:last-child) td {
+    border-bottom: 1px solid var(--gray-100);
+  }
+
+  .comp-table tbody td {
+    padding: 8px 10px;
+    vertical-align: middle;
+  }
+
+  /* Número compresor: rojo media / azul baja */
+  .c-num {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    display: grid;
+    place-items: center;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--white);
+    margin: 0 auto;
+  }
+
+  .c-num.media {
+    background: var(--ol-red);
+  }
+
+  .c-num.baja {
+    background: var(--ol-blue);
+  }
+
+  .comp-table .form-control,
+  .comp-table .form-select {
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px;
+    border-color: var(--gray-200);
+    background: var(--gray-50);
+    border-radius: 6px;
+    padding: 5px 8px;
+    transition: border-color .15s, box-shadow .15s;
+  }
+
+  .comp-table .form-control:focus,
+  .comp-table .form-select:focus {
+    border-color: var(--ol-blue);
+    box-shadow: 0 0 0 3px rgba(0, 71, 187, .1);
+    background: var(--white);
+  }
+
+  /* ── PRESIONES ── */
+  .presiones-body {
+    padding: 1rem;
+    background: var(--gray-50);
+    border-top: 1px solid var(--gray-200);
+  }
+
+  .presiones-body .form-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    margin-bottom: 4px;
+  }
+
+  .presiones-body .form-control {
+    font-family: 'Barlow', sans-serif;
+    font-size: 13px;
+    border-color: var(--gray-200);
+    background: var(--white);
+    border-radius: 6px;
+    transition: border-color .15s, box-shadow .15s;
+  }
+
+  .presiones-body .form-control:focus {
+    border-color: var(--ol-blue);
+    box-shadow: 0 0 0 3px rgba(0, 71, 187, .1);
+  }
+
+  /* ── FOOTER STICKY ── */
+  .form-footer {
+    background: var(--white);
+    border-top: 1px solid var(--gray-200);
+    padding: 12px 20px;
+    position: sticky;
+    bottom: 0;
+    box-shadow: 0 -4px 16px rgba(0, 71, 187, .08);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .footer-icontec-note {
+    font-size: 11px;
+    color: var(--gold);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Botón finalizar: gris antracita + línea dorada ICONTEC */
+  .btn-finalizar {
+    background: linear-gradient(135deg, var(--charcoal-dark), var(--charcoal));
+    border: none;
+    color: var(--white);
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 9px 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    position: relative;
+    overflow: hidden;
+    transition: all .2s;
+    cursor: pointer;
+  }
+
+  .btn-finalizar::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
+  }
+
+  .btn-finalizar:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(46, 58, 78, .35);
+    color: var(--white);
+  }
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
+
+<div class="progress-strip">
+  <div class="fill" id="progressFill"></div>
+</div>
+
+<div class="page-header">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <h2 class="page-title">Cierre de Actividad <span class="badge-checkout">Check-out</span></h2>
+    </div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <span class="rack-tag"><i class="bi bi-server me-1"></i>{{ registro.rack }}</span>
+      <span class="text-muted" style="font-size:12px;">—</span>
+      <span class="maint-tag"><i class="bi bi-tools me-1"></i>{{ registro.get_tipo_actividad_display }}</span>
+    </div>
+  </div>
+</div>
+
 <div class="row">
   <div class="col-12">
-    <h2 class="h5 mb-3">Cierre de actividad (Check-out)</h2>
-    <p class="text-muted">{{ registro.rack }} — {{ registro.get_tipo_actividad_display }}</p>
     <form method="post" id="checkout-form">
       {% csrf_token %}
-      <div class="card mb-3">
-        <div class="card-header">Observaciones del trabajo realizado</div>
-        <div class="card-body">{{ form_cierre.observaciones }}</div>
+
+      <!-- OBSERVACIONES -->
+      <div class="section-card">
+        <div class="section-header-bar charcoal">
+          <div class="section-header-icon"><i class="bi bi-pencil-square"></i></div>
+          <span class="section-header-title">Observaciones del trabajo realizado</span>
+        </div>
+        <div class="charcoal-accent-line"></div>
+        <div class="obs-body">{{ form_cierre.observaciones }}</div>
       </div>
-      <div class="card mb-3">
-        <div class="card-header">Parámetros finales (mismos datos para comparar)</div>
-        <div class="card-body p-0">
-          {% with comps=form_salida.get_compresores %}
 
-          {% if comps.media %}
-          <div class="p-2 bg-light border-bottom"><strong>Media Temperatura</strong></div>
-          <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th style="width: 40px;">C#</th>
-                  <th>Corriente (A)</th>
-                  <th>Aceite</th>
-                  <th>Nivel</th>
-                  <th>Ruido</th>
-                  <th class="text-center">Dispara por Aceite</th>
-                  <th class="text-center">Dispara por Presión</th>
-                  <th class="text-center">Traxoil Funcional</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for c in comps.media %}
-                <tr>
-                  <td class="fw-bold">{{ c.numero }}</td>
-                  <td style="min-width: 90px;">{{ c.corriente }}</td>
-                  <td style="min-width: 100px;">{{ c.estado_aceite }}</td>
-                  <td style="min-width: 100px;">{{ c.nivel_aceite }}</td>
-                  <td style="min-width: 100px;">{{ c.ruido }}</td>
-                  <td class="text-center">{{ c.dispara_aceite }}</td>
-                  <td class="text-center">{{ c.dispara_presion }}</td>
-                  <td class="text-center">{{ c.funciona_traxoil }}</td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-          {% endif %}
+      <!-- PARÁMETROS FINALES -->
+      <div class="section-card">
+        <div class="section-header-bar">
+          <div class="section-header-icon"><i class="bi bi-cpu"></i></div>
+          <span class="section-header-title">Parámetros Finales</span>
+        </div>
+        <div class="gold-accent-line"></div>
 
-          {% if comps.baja %}
-          <div class="p-2 bg-light border-bottom {% if comps.media %}mt-2{% endif %}"><strong>Baja Temperatura</strong>
-          </div>
-          <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th style="width: 40px;">C#</th>
-                  <th>Corriente (A)</th>
-                  <th>Aceite</th>
-                  <th>Nivel</th>
-                  <th>Ruido</th>
-                  <th class="text-center">Dispara por Aceite</th>
-                  <th class="text-center">Dispara por Presión</th>
-                  <th class="text-center">Traxoil Funcional</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for c in comps.baja %}
-                <tr>
-                  <td class="fw-bold">{{ c.numero }}</td>
-                  <td style="min-width: 90px;">{{ c.corriente }}</td>
-                  <td style="min-width: 100px;">{{ c.estado_aceite }}</td>
-                  <td style="min-width: 100px;">{{ c.nivel_aceite }}</td>
-                  <td style="min-width: 100px;">{{ c.ruido }}</td>
-                  <td class="text-center">{{ c.dispara_aceite }}</td>
-                  <td class="text-center">{{ c.dispara_presion }}</td>
-                  <td class="text-center">{{ c.funciona_traxoil }}</td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-          {% endif %}
+        {% with comps=form_salida.get_compresores %}
 
-          {% if not comps.media and not comps.baja %}
-          <div class="p-3 text-muted small text-center">Sin compresores para mostrar.</div>
-          {% endif %}
+        {% if comps.media %}
+        <div class="temp-divider media">
+          <i class="bi bi-thermometer-high"></i> Media Temperatura
+        </div>
+        <div class="table-responsive px-3 pb-2">
+          <table class="comp-table">
+            <thead>
+              <tr>
+                <th style="width:42px; text-align:center;">C#</th>
+                <th>Corriente (A)</th>
+                <th>Aceite</th>
+                <th>Nivel</th>
+                <th>Ruido</th>
+                <th class="text-center">Dispara por Aceite</th>
+                <th class="text-center">Dispara por Presión</th>
+                <th class="text-center">Traxoil Funcional</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in comps.media %}
+              <tr>
+                <td>
+                  <div class="c-num media">{{ c.numero }}</div>
+                </td>
+                <td style="min-width:90px;">{{ c.corriente }}</td>
+                <td style="min-width:110px;">{{ c.estado_aceite }}</td>
+                <td style="min-width:110px;">{{ c.nivel_aceite }}</td>
+                <td style="min-width:110px;">{{ c.ruido }}</td>
+                <td class="text-center">{{ c.dispara_aceite }}</td>
+                <td class="text-center">{{ c.dispara_presion }}</td>
+                <td class="text-center">{{ c.funciona_traxoil }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
 
-          {% endwith %}
+        {% if comps.baja %}
+        <div class="temp-divider baja {% if comps.media %}mt-1{% endif %}">
+          <i class="bi bi-thermometer-low"></i> Baja Temperatura
+        </div>
+        <div class="table-responsive px-3 pb-3">
+          <table class="comp-table">
+            <thead>
+              <tr>
+                <th style="width:42px; text-align:center;">C#</th>
+                <th>Corriente (A)</th>
+                <th>Aceite</th>
+                <th>Nivel</th>
+                <th>Ruido</th>
+                <th class="text-center">Dispara por Aceite</th>
+                <th class="text-center">Dispara por Presión</th>
+                <th class="text-center">Traxoil Funcional</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in comps.baja %}
+              <tr>
+                <td>
+                  <div class="c-num baja">{{ c.numero }}</div>
+                </td>
+                <td style="min-width:90px;">{{ c.corriente }}</td>
+                <td style="min-width:110px;">{{ c.estado_aceite }}</td>
+                <td style="min-width:110px;">{{ c.nivel_aceite }}</td>
+                <td style="min-width:110px;">{{ c.ruido }}</td>
+                <td class="text-center">{{ c.dispara_aceite }}</td>
+                <td class="text-center">{{ c.dispara_presion }}</td>
+                <td class="text-center">{{ c.funciona_traxoil }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
 
-          <div class="p-3 bg-light border-top">
-            <div class="row g-2">
-              <div class="col-12 col-md-6 col-lg-4"><label class="form-label small">Presión succión media temp
-                  (psi)</label>{{ form_salida.presion_succion_media }}</div>
-              <div class="col-12 col-md-6 col-lg-4"><label class="form-label small">Presión succión baja temp
-                  (psi)</label>{{ form_salida.presion_succion_baja }}</div>
-              <div class="col-12 col-md-6 col-lg-4"><label class="form-label small">Presión descarga
-                  (psi)</label>{{form_salida.presion_descarga }}</div>
-              <div class="col-12 col-md-6 col-lg-4"><label class="form-label small">Presión entrada condensación
-                  (psi)</label>{{ form_salida.presion_entrada_condensacion }}</div>
-              <div class="col-12 col-md-6 col-lg-4"><label class="form-label small">Presión salida condensación
-                  (psi)</label>{{ form_salida.presion_salida_condensacion }}</div>
+        {% if not comps.media and not comps.baja %}
+        <div class="p-3 text-muted small">
+          <i class="bi bi-info-circle me-1"></i> Sin compresores para mostrar.
+        </div>
+        {% endif %}
+
+        {% endwith %}
+
+        <!-- Presiones finales -->
+        <div class="presiones-body">
+          <p class="mb-2"
+            style="font-size:11px; font-weight:700; color:var(--gray-500); text-transform:uppercase; letter-spacing:.5px;">
+            <i class="bi bi-speedometer2 me-1"></i> Presiones
+          </p>
+          <div class="row g-3">
+            <div class="col-12 col-md-6 col-lg-4">
+              <label class="form-label">Presión succión media temp (psi)</label>
+              {{ form_salida.presion_succion_media }}
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+              <label class="form-label">Presión succión baja temp (psi)</label>
+              {{ form_salida.presion_succion_baja }}
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+              <label class="form-label">Presión descarga (psi)</label>
+              {{ form_salida.presion_descarga }}
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+              <label class="form-label">Presión entrada condensación (psi)</label>
+              {{ form_salida.presion_entrada_condensacion }}
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+              <label class="form-label">Presión salida condensación (psi)</label>
+              {{ form_salida.presion_salida_condensacion }}
             </div>
           </div>
         </div>
+
       </div>
-      <button type="submit" class="btn btn-success btn-lg">Finalizar y cerrar registro</button>
+
+      <!-- FOOTER -->
+      <div class="form-footer">
+        <div class="footer-icontec-note">
+          <i class="bi bi-patch-check-fill"></i>
+          Proceso auditado · Sello Sostenibilidad ORO ICONTEC
+        </div>
+        <button type="submit" class="btn-finalizar">
+          <i class="bi bi-check-circle"></i> Finalizar y cerrar registro
+        </button>
+      </div>
+
     </form>
   </div>
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+
+    // Barra de progreso dorada
+    const inputs = document.querySelectorAll('#checkout-form input, #checkout-form select, #checkout-form textarea');
+    const fill = document.getElementById('progressFill');
+
+    function updateProgress() {
+      let done = 0;
+      inputs.forEach(el => { if (el.value && el.value.trim() !== '') done++; });
+      fill.style.width = inputs.length ? Math.round((done / inputs.length) * 100) + '%' : '0%';
+    }
+
+    inputs.forEach(el => el.addEventListener('change', updateProgress));
+    inputs.forEach(el => el.addEventListener('input', updateProgress));
+    updateProgress();
+
+    // Validación campos vacíos (lógica original preservada)
     const form = document.getElementById('checkout-form');
     form.addEventListener('submit', function (event) {
-      // Seleccionamos todos los campos técnicos (números y selects)
-      const inputs = form.querySelectorAll('input[type="number"], select');
+      const techInputs = form.querySelectorAll('input[type="number"], select');
       let vacios = [];
 
-      inputs.forEach(input => {
+      techInputs.forEach(input => {
         if (!input.value.trim()) {
-          // Usamos el data-label que inyectamos en el form
           const labelText = input.getAttribute('data-label');
-          if (labelText) {
-            vacios.push(labelText);
-          }
+          if (labelText) vacios.push(labelText);
         }
       });
 
       if (vacios.length > 0) {
-        event.preventDefault(); // Detenemos el envío
+        event.preventDefault();
         const lista = vacios.join('\n- ');
         const mensaje = `Has dejado los siguientes campos vacíos:\n\n- ${lista}\n\n¿Estás seguro de que quieres finalizar el registro con estos datos faltantes?`;
-
-        if (confirm(mensaje)) {
-          // Si el usuario acepta, removemos el listener para permitir el envío real
-          // o simplemente llamamos a submit() si no estamos en un loop infinito
-          form.submit();
-        }
+        if (confirm(mensaje)) form.submit();
       }
     });
   });
