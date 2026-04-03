@@ -49,7 +49,7 @@
         {% if user.is_supervisor %}
         <a class="btn btn-outline-light btn-sm me-2" href="{% url 'analytics:dashboard' %}">Reportes</a>
         {% else %}
-        <a class="btn btn-outline-light btn-sm me-2" href="{% url 'operations:scanner' %}">Escáner</a>
+        <a class="btn btn-outline-light btn-sm me-2" href="{% url 'operations:scanner' %}">Inicio</a>
         {% endif %}
         <form action="{% url 'users:logout' %}" method="post" style="display:inline;">
           {% csrf_token %}
