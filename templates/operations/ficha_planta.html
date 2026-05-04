@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Ficha — {{ planta.id_qr }}{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-12 col-md-8 mx-auto">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <h2 class="h4 mb-0 text-primary fw-bold">Ficha Técnica — {{ planta.id_qr }}</h2>
+      <span class="badge bg-success">Planta Eléctrica</span>
+    </div>
+
+    {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <label class="text-muted small text-uppercase fw-bold">Tienda</label>
+            <p class="mb-0 fw-semibold">{{ planta.tienda.nombre }}</p>
+          </div>
+          <div class="col-sm-6">
+            <label class="text-muted small text-uppercase fw-bold">Ubicación</label>
+            <p class="mb-0">{{ planta.ubicacion|default:"—" }}</p>
+          </div>
+          <div class="col-sm-6">
+            <label class="text-muted small text-uppercase fw-bold">Marca / Modelo</label>
+            <p class="mb-0">{{ planta.marca }} {{ planta.modelo }}</p>
+          </div>
+          <div class="col-sm-6">
+            <label class="text-muted small text-uppercase fw-bold">Capacidad</label>
+            <p class="mb-0">{{ planta.capacidad_kva|default:"—" }} KVA</p>
+          </div>
+          <div class="col-sm-6">
+            <label class="text-muted small text-uppercase fw-bold">Serie</label>
+            <p class="mb-0">{{ planta.serie|default:"—" }}</p>
+          </div>
+          <div class="col-sm-6">
+            <label class="text-muted small text-uppercase fw-bold">Última Revisión</label>
+            <p class="mb-0">
+              {% if ultimo_registro %}
+                {{ ultimo_registro.fecha|date:"d/m/Y" }}
+              {% else %}
+                <span class="text-muted small italic">Sin registros previos</span>
+              {% endif %}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow-sm border-0 bg-light">
+      <div class="card-body text-center p-4">
+        <h5 class="fw-bold mb-3">Iniciar Revisión Mensual</h5>
+        <p class="text-muted small mb-4">Se iniciará el cronómetro y se creará un nuevo registro de revisión para esta planta.</p>
+        
+        <form method="post" action="{% url 'operations:iniciar_planta' planta_id=planta.pk %}">
+          {% csrf_token %}
+          <div class="d-grid gap-2">
+            {% for value, label in tipos %}
+              <button type="submit" name="tipo_actividad" value="{{ value }}" class="btn btn-primary py-2 fw-bold">
+                <i class="bi bi-play-fill me-1"></i> Iniciar {{ label }}
+              </button>
+            {% endfor %}
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="mt-4 text-center">
+      <a href="{% url 'operations:scanner' %}" class="btn btn-link text-secondary">
+        <i class="bi bi-qr-code-scan me-1"></i> Volver al escáner
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

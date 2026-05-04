@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% block title %}Revisión Planta — {{ registro.planta.id_qr }}{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-12 col-xl-10 mx-auto">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h2 class="h4 mb-0 text-primary fw-bold">Revisión Mensual de Planta</h2>
+        <p class="text-muted small mb-0">{{ registro.planta.id_qr }} — {{ registro.planta.tienda.nombre }}</p>
+      </div>
+      <div class="text-end">
+        <span class="badge bg-warning text-dark px-3 py-2">EN PROCESO</span>
+      </div>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <!-- 1. BATERÍA -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-primary text-white py-3">
+          <h5 class="mb-0 fw-bold small text-uppercase"><i class="bi bi-battery-charging me-2"></i>Estado de Batería</h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label small fw-bold">Cantidad de Baterías</label>
+              <input type="number" name="bateria_cantidad" class="form-control" placeholder="0">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-bold">Modelo de Batería</label>
+              <input type="text" name="bateria_modelo" class="form-control" placeholder="Ej: 12V 100Ah">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-bold">Fecha Instalación</label>
+              <input type="date" name="bateria_fecha_instalacion" class="form-control">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold">Estado del Cargador</label>
+              <select name="bateria_estado_cargador" class="form-select">
+                <option value="">Seleccione...</option>
+                <option value="bueno">Bueno</option>
+                <option value="regular">Regular</option>
+                <option value="malo">Malo</option>
+                <option value="na">N/A</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold">Nivel de Carga</label>
+              <select name="bateria_nivel_carga" class="form-select">
+                <option value="">Seleccione...</option>
+                <option value="bueno">Bueno</option>
+                <option value="regular">Regular</option>
+                <option value="malo">Malo</option>
+                <option value="na">N/A</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. FLUIDOS -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-info text-white py-3">
+          <h5 class="mb-0 fw-bold small text-uppercase"><i class="bi bi-droplet-half me-2"></i>Fluidos y Componentes</h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label small fw-bold">Fugas Aceite/Combustible</label>
+              <select name="fugas_aceite_combustible" class="form-select">
+                <option value="">Seleccione...</option>
+                <option value="bueno">Sin Fugas (Bueno)</option>
+                <option value="malo">Con Fugas (Malo)</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-bold">Nivel Combustible</label>
+              <select name="nivel_combustible" class="form-select">
+                <option value="">Seleccione...</option>
+                <option value="bueno">Lleno / Bueno</option>
+                <option value="regular">Regular</option>
+                <option value="malo">Bajo / Malo</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-bold">Tipo Radiador</label>
+              <input type="text" name="tipo_radiador" class="form-control" placeholder="Ej: Agua / Mezcla">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-bold">Nivel Agua Radiador</label>
+              <select name="nivel_agua_radiador" class="form-select">
+                <option value="">Seleccione...</option>
+                <option value="bueno">Bueno</option>
+                <option value="regular">Regular</option>
+                <option value="malo">Malo</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-bold">Nivel de Aceite</label>
+              <select name="nivel_aceite" class="form-select">
+                <option value="">Seleccione...</option>
+                <option value="bueno">Bueno</option>
+                <option value="regular">Regular</option>
+                <option value="malo">Malo</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small fw-bold">Horas Funcionamiento</label>
+              <input type="number" step="0.1" name="horas_funcionamiento" class="form-control" placeholder="0.0">
+            </div>
+            <div class="col-md-12">
+              <label class="form-label small fw-bold">Obstrucción (Entrada/Salida Aire)</label>
+              <select name="obstruccion" class="form-select">
+                <option value="bueno">Sin Obstrucción (Bueno)</option>
+                <option value="malo">Obstruido (Malo)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. PARÁMETROS ELÉCTRICOS -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-dark text-white py-3">
+          <h5 class="mb-0 fw-bold small text-uppercase"><i class="bi bi-lightning-charge me-2"></i>Parámetros Eléctricos</h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-12"><h6 class="fw-bold border-bottom pb-2">Voltajes Línea a Línea (V)</h6></div>
+            <div class="col-md-4">
+              <label class="form-label small">L1-L2</label>
+              <input type="number" step="0.01" name="voltaje_l1l2" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small">L2-L3</label>
+              <input type="number" step="0.01" name="voltaje_l2l3" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small">L1-L3</label>
+              <input type="number" step="0.01" name="voltaje_l1l3" class="form-control">
+            </div>
+
+            <div class="col-12 mt-4"><h6 class="fw-bold border-bottom pb-2">Voltajes Línea a Neutro (V)</h6></div>
+            <div class="col-md-4">
+              <label class="form-label small">L1-N</label>
+              <input type="number" step="0.01" name="voltaje_l1n" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small">L2-N</label>
+              <input type="number" step="0.01" name="voltaje_l2n" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small">L3-N</label>
+              <input type="number" step="0.01" name="voltaje_l3n" class="form-control">
+            </div>
+
+            <div class="col-12 mt-4"><h6 class="fw-bold border-bottom pb-2">Amperajes por Fase (A)</h6></div>
+            <div class="col-md-4">
+              <label class="form-label small">A1</label>
+              <input type="number" step="0.01" name="amperaje_a1" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small">A2</label>
+              <input type="number" step="0.01" name="amperaje_a2" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label small">A3</label>
+              <input type="number" step="0.01" name="amperaje_a3" class="form-control">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. LECTURA Y PRUEBAS -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-secondary text-white py-3">
+          <h5 class="mb-0 fw-bold small text-uppercase"><i class="bi bi-gear-wide-connected me-2"></i>Lectura de Datos y Pruebas</h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label small fw-bold">Voltaje Generador</label>
+              <input type="number" step="0.01" name="voltaje_generador" class="form-control">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small fw-bold">Frecuencia (Hz)</label>
+              <input type="number" step="0.01" name="frecuencia_hz" class="form-control">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small fw-bold">RPM</label>
+              <input type="number" name="rpm" class="form-control">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small fw-bold">Voltaje DC Cargador</label>
+              <input type="number" step="0.01" name="voltaje_dc_cargador" class="form-control">
+            </div>
+            
+            <div class="col-md-6 mt-4">
+              <label class="form-label small fw-bold">Arranque en Vacío</label>
+              <select name="arranque_vacio" class="form-select">
+                <option value="bueno">Exitoso (Bueno)</option>
+                <option value="malo">Fallido (Malo)</option>
+              </select>
+            </div>
+            <div class="col-md-6 mt-4">
+              <label class="form-label small fw-bold">Prueba de Transferencia con Carga</label>
+              <select name="prueba_transferencia_carga" class="form-select">
+                <option value="bueno">Exitosa (Bueno)</option>
+                <option value="malo">Fallida (Malo)</option>
+                <option value="na">N/A</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. OBSERVACIONES -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-light py-3">
+          <h5 class="mb-0 fw-bold small text-uppercase text-dark"><i class="bi bi-chat-left-text me-2"></i>Observaciones Adicionales</h5>
+        </div>
+        <div class="card-body">
+          <textarea name="observaciones" class="form-control" rows="4" placeholder="Describa hallazgos o recomendaciones..."></textarea>
+        </div>
+      </div>
+
+      <div class="d-grid gap-2 mb-5">
+        <button type="submit" class="btn btn-success btn-lg fw-bold">
+          <i class="bi bi-check-circle-fill me-2"></i> Finalizar y Generar PDF
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+{% endblock %}

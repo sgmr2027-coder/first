@@ -204,6 +204,7 @@ class FichaPlantaView(TecnicoRequiredMixin, View):
         return render(request, 'operations/ficha_planta.html', {
             'planta': planta,
             'ultimo_registro': ultimo_registro,
+            'tipos': TipoActividad.choices,
         })
  
  
@@ -425,7 +426,7 @@ class PlantaPDFView(View):
             'prueba_transferencia':   lbl(registro.prueba_transferencia_carga),
         }
  
-        template = get_template('operations/reporte_planta.html')
+        template = get_template('operations/reporte_pdf_planta.html')
         html = template.render(context, request)
         result = io.BytesIO()
         pdf = pisa.pisaDocument(io.BytesIO(html.encode('UTF-8')), result, link_callback=link_callback)
