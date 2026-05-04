@@ -156,7 +156,11 @@ def api_rack_qr(request, id_qr):
     """Devuelve JSON del rack. Solo técnicos."""
     if getattr(request.user, 'rol', None) != Rol.TECNICO:
         return JsonResponse({'ok': False, 'error': 'Solo técnicos pueden escanear.'}, status=403)
-    rack = get_object_or_404(Rack, id_qr=id_qr, activo=True)
+    try:
+        rack = Rack.objects.get(id_qr=id_qr, activo=True)
+    except Rack.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': f'No se encontró el Rack con código {id_qr}'}, status=404)
+    
     return JsonResponse({
         'ok': True,
         'id': rack.pk,
@@ -179,7 +183,11 @@ def api_planta_qr(request, id_qr):
     """Devuelve JSON de la planta eléctrica. Solo técnicos."""
     if getattr(request.user, 'rol', None) != Rol.TECNICO:
         return JsonResponse({'ok': False, 'error': 'Solo técnicos pueden escanear.'}, status=403)
-    planta = get_object_or_404(PlantaElectrica, id_qr=id_qr, activo=True)
+    try:
+        planta = PlantaElectrica.objects.get(id_qr=id_qr, activo=True)
+    except PlantaElectrica.DoesNotExist:
+        return JsonResponse({'ok': False, 'error': f'No se encontró la Planta con código {id_qr}'}, status=404)
+
     return JsonResponse({
         'ok': True,
         'id': planta.pk,

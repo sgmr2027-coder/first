@@ -481,16 +481,7 @@
             {% endfor %}
           </select>
         </div>
-        <div class="col-12 col-sm-6 col-md-auto">
-          <label for="select-rack" class="form-label">Equipo (Rack)</label>
-          <select name="rack" id="select-rack" class="form-select form-select-sm" style="min-width:10rem;"
-            data-selected="{{ rack_seleccionado }}">
-            <option value="">Todos los racks</option>
-            {% for r in racks %}
-            <option value="{{ r.pk }}">{{ r.id_qr }}</option>
-            {% endfor %}
-          </select>
-        </div>
+        <!-- Filtro por Rack removido para dashboard unificado -->
         <div class="col-12 col-sm-6 col-md-auto">
           <label for="id_fecha_inicio" class="form-label">Desde</label>
           <input type="date" name="fecha_inicio" id="id_fecha_inicio" class="form-control form-control-sm"
@@ -532,8 +523,9 @@
         <tr>
           <th>Inicio</th>
           <th>Técnico</th>
-          <th>Rack / Tienda</th>
-          <th>Tipo / Estado</th>
+          <th>Tipo</th>
+          <th>Equipo / Tienda</th>
+          <th>Actividad / Estado</th>
           <th class="text-end">Informe</th>
         </tr>
       </thead>
@@ -549,8 +541,20 @@
             {{ r.tecnico.nombre_completo|default:r.tecnico.username }}
           </td>
           <td>
-            <span class="rack-code">{{ r.rack.id_qr }}</span><br>
-            <small class="text-muted">{{ r.rack.tienda.nombre }}</small>
+            {% if r.tipo_equipo == 'Rack' %}
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2">RACK</span>
+            {% else %}
+              <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2">PLANTA</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if r.tipo_equipo == 'Rack' %}
+              <span class="rack-code">{{ r.rack.id_qr }}</span><br>
+              <small class="text-muted">{{ r.rack.tienda.nombre }}</small>
+            {% else %}
+              <span class="rack-code bg-warning-subtle text-dark border-warning">{{ r.planta.id_qr }}</span><br>
+              <small class="text-muted">{{ r.planta.tienda.nombre }}</small>
+            {% endif %}
           </td>
           <td>
             <div class="d-flex align-items-center gap-2">
@@ -560,21 +564,30 @@
               <span class="status-dot abierto" title="En curso"></span>
               {% endif %}
 
-              {% if "preventivo" in r.get_tipo_actividad_display|lower %}
-              <span class="tipo-pill preventivo">{{ r.get_tipo_actividad_display }}</span>
-              {% elif "correctivo" in r.get_tipo_actividad_display|lower %}
-              <span class="tipo-pill correctivo">{{ r.get_tipo_actividad_display }}</span>
+              {% if r.tipo_equipo == 'Rack' %}
+                {% if "preventivo" in r.get_tipo_actividad_display|lower %}
+                <span class="tipo-pill preventivo">{{ r.get_tipo_actividad_display }}</span>
+                {% elif "correctivo" in r.get_tipo_actividad_display|lower %}
+                <span class="tipo-pill correctivo">{{ r.get_tipo_actividad_display }}</span>
+                {% else %}
+                <span class="tipo-pill otro">{{ r.get_tipo_actividad_display }}</span>
+                {% endif %}
               {% else %}
-              <span class="tipo-pill otro">{{ r.get_tipo_actividad_display }}</span>
+                <span class="tipo-pill preventivo">Revisión Mensual</span>
               {% endif %}
             </div>
           </td>
           <td class="text-end">
             {% if r.cerrado %}
-            <a href="{% url 'operations:pdf_rack' r.pk %}" class="btn btn-outline-danger btn-sm py-0 px-2"
-              style="font-size: 11px; font-weight: 600;" target="_blank">
-              <i class="bi bi-file-earmark-pdf"></i> PDF
-            </a>
+              {% if r.tipo_equipo == 'Rack' %}
+                <a href="{% url 'operations:pdf_rack' r.pk %}" class="btn btn-outline-danger btn-sm py-0 px-2" style="font-size: 11px; font-weight: 600;" target="_blank">
+                  <i class="bi bi-file-earmark-pdf"></i> PDF
+                </a>
+              {% else %}
+                <a href="{% url 'operations:pdf_planta' r.pk %}" class="btn btn-outline-danger btn-sm py-0 px-2" style="font-size: 11px; font-weight: 600;" target="_blank">
+                  <i class="bi bi-file-earmark-pdf"></i> PDF
+                </a>
+              {% endif %}
             {% else %}
             <span class="text-muted small">En curso</span>
             {% endif %}
