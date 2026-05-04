@@ -1,139 +1,178 @@
 {% extends 'base.html' %}
-{% block title %}Seleccionar Rack — SGMR{% endblock %}
+{% block title %}Seleccionar Equipo — SGMR{% endblock %}
+ 
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-12 col-md-8 col-lg-6">
-    <h2 class="h5 mb-3">Seleccionar Rack</h2>
-
+    <h2 class="h5 mb-3">Seleccionar Equipo</h2>
+ 
     {% if tarea_abierta %}
     <div class="alert alert-warning">
-      <strong>Tienes abierta una actividad en otro equipo, ciérrala para avanzar con otro en:</strong>
-      {{tarea_abierta.rack }}.
+      <strong>Tienes una actividad abierta en otro equipo, ciérrala para continuar:</strong>
+      {{ tarea_abierta.rack }}.
       <a href="{% url 'operations:checkin' registro_id=tarea_abierta.pk %}">Ir a parámetros de entrada</a> o
       <a href="{% url 'operations:checkout' registro_id=tarea_abierta.pk %}">Ir a cierre</a>.
     </div>
     {% endif %}
-
+ 
     <div class="card">
-      <div class="card-header">Seleccionar rack por código QR</div>
+      <div class="card-header">Tipo de equipo</div>
       <div class="card-body">
+ 
+        <!-- PASO 1: Tipo de equipo -->
         <div class="mb-3">
-          <label for="select-rack" class="form-label">Rack</label>
-          <select id="select-rack" class="form-select">
-            <option value="">— Selecciona un rack —</option>
-            {% for rack in racks %}
-            <option value="{{ rack.id_qr }}">{{ rack.tienda.nombre }} — {{ rack.ubicacion }} ({{ rack.id_qr }})</option>
-            {% empty %}
-            <option disabled>No hay racks activos registrados.</option>
-            {% endfor %}
+          <label class="form-label fw-semibold">Selecciona el tipo de equipo</label>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-primary w-50 btn-tipo" data-tipo="rack">
+              🧊 Rack de Compresores
+            </button>
+            <button type="button" class="btn btn-outline-warning w-50 btn-tipo" data-tipo="planta">
+              ⚡ Planta Eléctrica
+            </button>
+          </div>
+        </div>
+ 
+        <!-- PASO 2: Select de equipo -->
+        <div id="contenedor-select" class="mb-3" style="display:none;">
+          <label for="select-equipo" class="form-label" id="label-equipo">Equipo</label>
+          <select id="select-equipo" class="form-select">
+            <option value="">— Selecciona un equipo —</option>
           </select>
         </div>
+ 
         <button id="btn-continuar" class="btn btn-primary w-100" disabled>Continuar →</button>
       </div>
     </div>
-
+ 
     <div id="resultado" class="mt-3"></div>
-
-    <!--
-    =====================================================================
-    ESCÁNER DE CÁMARA — deshabilitado temporalmente para pruebas.
-    Reactivar cuando se resuelva la compatibilidad HTTPS / detección QR.
-    =====================================================================
-
-    <div class="card mb-3">
-      <div class="card-body">
-        <div id="reader" style="min-height: 280px;"></div>
-        <div id="scanner-status" class="text-muted small mt-2">Iniciando escáner…</div>
-      </div>
-    </div>
-
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <script>
-    // (function () {
-    //   if (typeof Html5Qrcode !== 'undefined') {
-    //     const scanner = new Html5Qrcode('reader');
-    //     scanner.start(
-    //       { facingMode: 'environment' },
-    //       {
-    //         fps: 10,
-    //         qrbox: function(w, h) {
-    //           const side = Math.min(w, h) * 0.8;
-    //           return { width: Math.floor(side), height: Math.floor(side) };
-    //         },
-    //         disableFlip: false,
-    //         experimentalFeatures: { useBarCodeDetectorIfSupported: true }
-    //       },
-    //       function onScanSuccess(decodedText) {
-    //         buscarRack(decodedText.trim());
-    //       },
-    //       function onScanError() {}
-    //     ).then(() => {
-    //       document.getElementById('scanner-status').textContent = '📷 Escáner activo — apunta al QR del rack.';
-    //     }).catch(err => {
-    //       document.getElementById('scanner-status').innerHTML =
-    //         '<span class="text-danger">⚠️ No se pudo iniciar la cámara: ' + err + '</span>';
-    //     });
-    //   } else {
-    //     document.getElementById('reader').innerHTML =
-    //       '<p class="text-danger">No se pudo cargar el escáner. Usa el campo manual.</p>';
-    //   }
-    // })();
-    </script>
-    -->
   </div>
 </div>
 {% endblock %}
+ 
 {% block extra_js %}
+{# Bloque de datos: Django genera JSON puro, el linter no lo toca #}
+<script id="sgmr-data" type="application/json">
+{
+  "racks": [
+    {% for rack in racks %}
+    {"id_qr": "{{ rack.id_qr|escapejs }}", "label": "{{ rack.tienda.nombre|escapejs }} — {{ rack.ubicacion|escapejs }} ({{ rack.id_qr|escapejs }})"}{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ],
+  "plantas": [
+    {% for planta in plantas %}
+    {"id_qr": "{{ planta.id_qr|escapejs }}", "label": "{{ planta.tienda.nombre|escapejs }} — {{ planta.ubicacion|escapejs }} ({{ planta.id_qr|escapejs }})"}{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ],
+  "urls": {
+    "api_rack":    "{% url 'operations:api_rack_qr'   id_qr='__ID__' %}",
+    "api_planta":  "{% url 'operations:api_planta_qr' id_qr='__ID__' %}",
+    "ficha_rack":  "{% url 'operations:ficha'         rack_id=999999 %}",
+    "ficha_planta":"{% url 'operations:ficha_planta'  planta_id=999999 %}"
+  }
+}
+</script>
+ 
+{# JS puro — sin ninguna etiqueta Django, el linter queda feliz #}
 <script>
-  (function () {
-    const selectRack = document.getElementById('select-rack');
-    const btnContinuar = document.getElementById('btn-continuar');
-    const resultado = document.getElementById('resultado');
-    let procesando = false;
-
-    selectRack.addEventListener('change', function () {
-      btnContinuar.disabled = !this.value;
+(function () {
+  // Leer datos inyectados por Django desde el bloque JSON
+  const cfg    = JSON.parse(document.getElementById('sgmr-data').textContent);
+  const RACKS   = cfg.racks;
+  const PLANTAS = cfg.plantas;
+  const URLS    = cfg.urls;
+ 
+  // DOM
+  const btnsTipo         = document.querySelectorAll('.btn-tipo');
+  const contenedorSelect = document.getElementById('contenedor-select');
+  const selectEquipo     = document.getElementById('select-equipo');
+  const labelEquipo      = document.getElementById('label-equipo');
+  const btnContinuar     = document.getElementById('btn-continuar');
+  const resultado        = document.getElementById('resultado');
+ 
+  let tipoActivo = null;
+  let procesando = false;
+ 
+  // PASO 1 — elegir tipo de equipo
+  btnsTipo.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      btnsTipo.forEach(function (b) { b.classList.remove('active'); });
+      this.classList.add('active');
+ 
+      tipoActivo = this.dataset.tipo;
       resultado.innerHTML = '';
-    });
-
-    function buscarRack(idQr) {
-      if (procesando || !idQr) return;
-      procesando = true;
       btnContinuar.disabled = true;
-
-      const apiUrl = '{% url "operations:api_rack_qr" id_qr="__ID__" %}'.replace('__ID__', encodeURIComponent(idQr));
-      resultado.innerHTML = '<div class="alert alert-info">🔍 Buscando rack <code>' + idQr + '</code>…</div>';
-
-      fetch(apiUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-        .then(r => {
-          if (!r.ok) {
-            return r.text().then(body => {
-              throw new Error('HTTP ' + r.status + ' — <small>' + body.substring(0, 300) + '</small>');
-            });
-          }
-          return r.json();
-        })
-        .then(data => {
-          if (data.ok) {
-            resultado.innerHTML = '<div class="alert alert-success">✅ Rack encontrado. Redirigiendo…</div>';
-            const url = '{% url "operations:ficha" rack_id=999999 %}'.replace('999999', data.id);
-            window.location.href = url;
-          } else {
-            resultado.innerHTML = '<div class="alert alert-danger">❌ ' + (data.error || 'Rack no encontrado.') +
-              '<br><small>Código: <code>' + idQr + '</code></small></div>';
-            procesando = false;
-            btnContinuar.disabled = false;
-          }
-        })
-        .catch(err => {
-          console.error('Error rack:', err);
-          resultado.innerHTML = '<div class="alert alert-danger">❌ Error: ' + err.message + '</div>';
+ 
+      var datos = tipoActivo === 'rack' ? RACKS : PLANTAS;
+      selectEquipo.innerHTML = '<option value="">— Selecciona un equipo —</option>';
+ 
+      if (datos.length === 0) {
+        selectEquipo.innerHTML += '<option disabled>No hay equipos activos registrados.</option>';
+      } else {
+        datos.forEach(function (item) {
+          var opt = document.createElement('option');
+          opt.value = item.id_qr;
+          opt.textContent = item.label;
+          selectEquipo.appendChild(opt);
+        });
+      }
+ 
+      labelEquipo.textContent = tipoActivo === 'rack' ? 'Rack' : 'Planta Eléctrica';
+      contenedorSelect.style.display = 'block';
+    });
+  });
+ 
+  // PASO 2 — elegir equipo del select
+  selectEquipo.addEventListener('change', function () {
+    btnContinuar.disabled = !this.value;
+    resultado.innerHTML = '';
+  });
+ 
+  // PASO 3 — buscar por QR y redirigir a la ficha
+  function buscarEquipo(idQr) {
+    if (procesando || !idQr || !tipoActivo) { return; }
+    procesando = true;
+    btnContinuar.disabled = true;
+ 
+    var esRack  = tipoActivo === 'rack';
+    var apiUrl  = (esRack ? URLS.api_rack : URLS.api_planta).replace('__ID__', encodeURIComponent(idQr));
+    var etiqueta = esRack ? 'rack' : 'planta';
+ 
+    resultado.innerHTML = '<div class="alert alert-info">🔍 Buscando ' + etiqueta + ' <code>' + idQr + '</code>…</div>';
+ 
+    fetch(apiUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function (r) {
+        if (!r.ok) {
+          return r.text().then(function (body) {
+            throw new Error('HTTP ' + r.status + ' — ' + body.substring(0, 200));
+          });
+        }
+        return r.json();
+      })
+      .then(function (data) {
+        if (data.ok) {
+          resultado.innerHTML = '<div class="alert alert-success">✅ Equipo encontrado. Redirigiendo…</div>';
+          var url = esRack
+            ? URLS.ficha_rack.replace('999999', data.id)
+            : URLS.ficha_planta.replace('999999', data.id);
+          window.location.href = url;
+        } else {
+          resultado.innerHTML = '<div class="alert alert-danger">❌ ' + (data.error || 'Equipo no encontrado.') +
+            '<br><small>Código: <code>' + idQr + '</code></small></div>';
           procesando = false;
           btnContinuar.disabled = false;
-        });
-    }
-
-    btnContinuar.addEventListener('click', () => buscarRack(selectRack.value));
-  })();
+        }
+      })
+      .catch(function (err) {
+        console.error('Error equipo:', err);
+        resultado.innerHTML = '<div class="alert alert-danger">❌ Error: ' + err.message + '</div>';
+        procesando = false;
+        btnContinuar.disabled = false;
+      });
+  }
+ 
+  btnContinuar.addEventListener('click', function () {
+    buscarEquipo(selectEquipo.value);
+  });
+})();
 </script>
 {% endblock %}

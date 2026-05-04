@@ -1,438 +1,344 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.conf import settings
-from django.contrib.auth.decorators import login_required
-from users.mixins import TecnicoRequiredMixin
-from users.models import Rol
-from django.views import View
-from django.utils import timezone
-from django.http import JsonResponse, HttpResponse
-from django.template.loader import get_template
-from django.views.decorators.http import require_GET, require_POST
-from django.contrib.auth.decorators import login_required
-from xhtml2pdf import pisa
-import io
-import os
- 
-from inventory.models import Rack, PlantaElectrica, RegistroPlanta
-from .models import RegistroActividad, TipoActividad
-from .services import (
-    tecnico_tiene_tarea_abierta,
-    obtener_tarea_abierta,
-    iniciar_actividad,
-    duracion_minutos,
-    es_duracion_sospechosa,
-)
-from .forms import ParametrosEntradaForm, ParametrosSalidaForm, CierreForm
- 
- 
-# ─────────────────────────────────────────────────────────────────────────────
-# SCANNER UNIFICADO
-# ─────────────────────────────────────────────────────────────────────────────
- 
-class ScannerView(TecnicoRequiredMixin, View):
-    """Pantalla principal: elige tipo de equipo (Rack o Planta) y luego el equipo."""
-    def get(self, request):
-        tarea_abierta = obtener_tarea_abierta(request.user)
-        return render(request, 'operations/scanner.html', {
-            'tarea_abierta': tarea_abierta,
-            'racks': Rack.objects.filter(activo=True).select_related('tienda').order_by('tienda__nombre', 'ubicacion'),
-            'plantas': PlantaElectrica.objects.filter(activo=True).select_related('tienda').order_by('tienda__nombre', 'ubicacion'),
-        })
- 
- 
-# ─────────────────────────────────────────────────────────────────────────────
-# RACK — Ficha e inicio de actividad
-# ─────────────────────────────────────────────────────────────────────────────
- 
-class FichaTecnicaView(TecnicoRequiredMixin, View):
-    """Ficha del rack + botones Preventivo / Correctivo / Emergencia."""
-    def get(self, request, rack_id):
-        rack = get_object_or_404(Rack, pk=rack_id, activo=True)
-        if tecnico_tiene_tarea_abierta(request.user):
-            tarea = obtener_tarea_abierta(request.user)
-            if tarea.rack_id != rack.id:
-                return render(request, 'operations/bloqueo_tarea.html', {
-                    'tarea_abierta': tarea,
-                    'rack_solicitado': rack,
-                })
-        return render(request, 'operations/ficha_tecnica.html', {
-            'rack': rack,
-            'tipos': TipoActividad.choices,
-        })
- 
- 
-class IniciarActividadView(TecnicoRequiredMixin, View):
-    """POST: inicia cronómetro y crea registro; redirige a check-in."""
-    def post(self, request, rack_id):
-        rack = get_object_or_404(Rack, pk=rack_id, activo=True)
-        tipo = request.POST.get('tipo_actividad')
-        if not tipo:
-            return redirect('operations:ficha', rack_id=rack_id)
-        try:
-            registro = iniciar_actividad(request.user, rack, tipo)
-            return redirect('operations:checkin', registro_id=registro.pk)
-        except ValueError as e:
-            return render(request, 'operations/ficha_tecnica.html', {
-                'rack': rack,
-                'tipos': TipoActividad.choices,
-                'error': str(e),
-            })
- 
- 
-# ─────────────────────────────────────────────────────────────────────────────
-# RACK — Check-in / Check-out
-# ─────────────────────────────────────────────────────────────────────────────
- 
-class CheckInView(TecnicoRequiredMixin, View):
-    """Parámetros de entrada. No se puede ver check-out hasta guardar."""
-    def get(self, request, registro_id):
-        registro = get_object_or_404(RegistroActividad, pk=registro_id, tecnico=request.user, cerrado=False)
-        form = ParametrosEntradaForm(initial=registro.datos_entrada or None, rack=registro.rack)
-        return render(request, 'operations/checkin.html', {'registro': registro, 'form': form})
- 
-    def post(self, request, registro_id):
-        registro = get_object_or_404(RegistroActividad, pk=registro_id, tecnico=request.user, cerrado=False)
-        form = ParametrosEntradaForm(request.POST, rack=registro.rack)
-        if form.is_valid():
-            registro.datos_entrada = form.to_json()
-            registro.save(update_fields=['datos_entrada'])
-            return redirect('operations:checkout', registro_id=registro.pk)
-        return render(request, 'operations/checkin.html', {'registro': registro, 'form': form})
- 
- 
-class SaltarCheckInView(TecnicoRequiredMixin, View):
-    """POST: marca todos los parámetros iniciales como 'No medido' y redirige a cierre."""
-    def post(self, request, registro_id):
-        registro = get_object_or_404(RegistroActividad, pk=registro_id, tecnico=request.user, cerrado=False)
-        form = ParametrosEntradaForm(rack=registro.rack)
-        datos = {field_name: 'No medido' for field_name in form.fields}
-        registro.datos_entrada = datos
-        registro.save(update_fields=['datos_entrada'])
-        return redirect('operations:checkout', registro_id=registro.pk)
- 
- 
-class CheckOutView(TecnicoRequiredMixin, View):
-    """Cierre: mismos parámetros que entrada + observaciones."""
-    def get(self, request, registro_id):
-        registro = get_object_or_404(RegistroActividad, pk=registro_id, tecnico=request.user, cerrado=False)
-        form_salida = ParametrosSalidaForm(initial=registro.datos_salida or None, rack=registro.rack)
-        form_cierre = CierreForm(initial={'observaciones': registro.observaciones})
-        return render(request, 'operations/checkout.html', {
-            'registro': registro,
-            'form_salida': form_salida,
-            'form_cierre': form_cierre,
-        })
- 
-    def post(self, request, registro_id):
-        registro = get_object_or_404(RegistroActividad, pk=registro_id, tecnico=request.user, cerrado=False)
-        form_salida = ParametrosSalidaForm(request.POST, rack=registro.rack)
-        form_cierre = CierreForm(request.POST)
-        if form_salida.is_valid() and form_cierre.is_valid():
-            registro.datos_salida = form_salida.to_json()
-            registro.observaciones = form_cierre.cleaned_data.get('observaciones', '')
-            registro.hora_fin = timezone.now()
-            registro.marcar_cerrado()
-            minutos = duracion_minutos(registro.hora_inicio, registro.hora_fin)
-            alerta_corto = es_duracion_sospechosa(minutos)
-            return render(request, 'operations/actividad_cerrada.html', {
-                'registro': registro,
-                'minutos': minutos,
-                'alerta_corto': alerta_corto,
-            })
-        return render(request, 'operations/checkout.html', {
-            'registro': registro,
-            'form_salida': form_salida,
-            'form_cierre': form_cierre,
-        })
- 
- 
-# ─────────────────────────────────────────────────────────────────────────────
-# RACK — API QR
-# ─────────────────────────────────────────────────────────────────────────────
- 
-@require_GET
-@login_required
-def api_rack_qr(request, id_qr):
-    """Devuelve JSON del rack. Solo técnicos."""
-    if getattr(request.user, 'rol', None) != Rol.TECNICO:
-        return JsonResponse({'ok': False, 'error': 'Solo técnicos pueden escanear.'}, status=403)
-    rack = get_object_or_404(Rack, id_qr=id_qr, activo=True)
-    return JsonResponse({
-        'ok': True,
-        'id': rack.pk,
-        'id_qr': rack.id_qr,
-        'tienda': rack.tienda.nombre,
-        'marca': rack.marca,
-        'ubicacion': rack.ubicacion,
-        'compresores_media': rack.compresores_media,
-        'compresores_baja': rack.compresores_baja,
-    })
- 
- 
-# ─────────────────────────────────────────────────────────────────────────────
-# PLANTA ELÉCTRICA — API QR
-# ─────────────────────────────────────────────────────────────────────────────
- 
-@require_GET
-@login_required
-def api_planta_qr(request, id_qr):
-    """Devuelve JSON de la planta eléctrica. Solo técnicos."""
-    if getattr(request.user, 'rol', None) != Rol.TECNICO:
-        return JsonResponse({'ok': False, 'error': 'Solo técnicos pueden escanear.'}, status=403)
-    planta = get_object_or_404(PlantaElectrica, id_qr=id_qr, activo=True)
-    return JsonResponse({
-        'ok': True,
-        'id': planta.pk,
-        'id_qr': planta.id_qr,
-        'tienda': planta.tienda.nombre,
-        'marca': planta.marca,
-        'modelo': planta.modelo,
-        'capacidad_kva': str(planta.capacidad_kva) if planta.capacidad_kva else None,
-        'ubicacion': planta.ubicacion,
-    })
- 
- 
-# ─────────────────────────────────────────────────────────────────────────────
-# PLANTA ELÉCTRICA — Ficha y registro de revisión
-# ─────────────────────────────────────────────────────────────────────────────
- 
-class FichaPlantaView(TecnicoRequiredMixin, View):
-    """Ficha de la planta + botón para iniciar revisión mensual."""
-    def get(self, request, planta_id):
-        planta = get_object_or_404(PlantaElectrica, pk=planta_id, activo=True)
-        ultimo_registro = planta.registros.order_by('-fecha').first()
-        return render(request, 'operations/ficha_planta.html', {
-            'planta': planta,
-            'ultimo_registro': ultimo_registro,
-        })
- 
- 
-class IniciarRevisionPlantaView(TecnicoRequiredMixin, View):
-    """POST: crea un RegistroPlanta abierto y redirige al formulario de revisión."""
-    def post(self, request, planta_id):
-        planta = get_object_or_404(PlantaElectrica, pk=planta_id, activo=True)
-        registro = RegistroPlanta.objects.create(
-            planta=planta,
-            tecnico=request.user,
-            fecha=timezone.now().date(),
-        )
-        return redirect('operations:revision_planta', registro_id=registro.pk)
- 
- 
-class RevisionPlantaView(TecnicoRequiredMixin, View):
-    """Formulario completo de revisión mensual de planta eléctrica."""
-    def get(self, request, registro_id):
-        registro = get_object_or_404(RegistroPlanta, pk=registro_id, tecnico=request.user, cerrado=False)
-        return render(request, 'operations/revision_planta.html', {'registro': registro})
- 
-    def post(self, request, registro_id):
-        registro = get_object_or_404(RegistroPlanta, pk=registro_id, tecnico=request.user, cerrado=False)
- 
-        def dec(key):
-            val = request.POST.get(key, '').strip()
-            try:
-                return float(val) if val else None
-            except ValueError:
-                return None
- 
-        def entero(key):
-            val = request.POST.get(key, '').strip()
-            try:
-                return int(val) if val else None
-            except ValueError:
-                return None
- 
-        def choice(key):
-            return request.POST.get(key, '').strip()
- 
-        # Batería
-        registro.bateria_cantidad           = entero('bateria_cantidad')
-        registro.bateria_modelo             = request.POST.get('bateria_modelo', '').strip()
-        registro.bateria_fecha_instalacion  = request.POST.get('bateria_fecha_instalacion') or None
-        registro.bateria_estado_cargador    = choice('bateria_estado_cargador')
-        registro.bateria_nivel_carga        = choice('bateria_nivel_carga')
- 
-        # Fluidos
-        registro.fugas_aceite_combustible   = choice('fugas_aceite_combustible')
-        registro.nivel_combustible          = choice('nivel_combustible')
-        registro.tipo_radiador              = request.POST.get('tipo_radiador', '').strip()
-        registro.nivel_agua_radiador        = choice('nivel_agua_radiador')
-        registro.nivel_aceite               = choice('nivel_aceite')
-        registro.horas_funcionamiento       = dec('horas_funcionamiento')
-        registro.obstruccion                = choice('obstruccion')
- 
-        # Voltajes L-L
-        registro.voltaje_l1l2 = dec('voltaje_l1l2')
-        registro.voltaje_l2l3 = dec('voltaje_l2l3')
-        registro.voltaje_l1l3 = dec('voltaje_l1l3')
- 
-        # Voltajes L-N
-        registro.voltaje_l1n = dec('voltaje_l1n')
-        registro.voltaje_l2n = dec('voltaje_l2n')
-        registro.voltaje_l3n = dec('voltaje_l3n')
- 
-        # Amperajes
-        registro.amperaje_a1 = dec('amperaje_a1')
-        registro.amperaje_a2 = dec('amperaje_a2')
-        registro.amperaje_a3 = dec('amperaje_a3')
- 
-        # Lectura de datos
-        registro.voltaje_generador   = dec('voltaje_generador')
-        registro.frecuencia_hz       = dec('frecuencia_hz')
-        registro.rpm                 = entero('rpm')
-        registro.voltaje_dc_cargador = dec('voltaje_dc_cargador')
- 
-        # Arranque / transferencia
-        registro.arranque_vacio             = choice('arranque_vacio')
-        registro.prueba_transferencia_carga = choice('prueba_transferencia_carga')
- 
-        # Cierre
-        registro.observaciones = request.POST.get('observaciones', '').strip()
-        registro.hora_fin = timezone.now()
-        registro.marcar_cerrado()
- 
-        return redirect('operations:pdf_planta', registro_id=registro.pk)
- 
- 
-# ─────────────────────────────────────────────────────────────────────────────
-# PDF — helper link_callback (compartido)
-# ─────────────────────────────────────────────────────────────────────────────
- 
-def link_callback(uri, rel):
-    """Convierte URIs de static/media en rutas absolutas para xhtml2pdf."""
-    s_url = settings.STATIC_URL
-    m_url = settings.MEDIA_URL
-    path = None
- 
-    if uri.startswith(s_url):
-        relative_path = uri.replace(s_url, '', 1).lstrip('/')
-        if settings.STATICFILES_DIRS:
-            for d in settings.STATICFILES_DIRS:
-                trial = os.path.join(d, relative_path)
-                if os.path.exists(trial):
-                    path = trial
-                    break
-        if not path:
-            path = os.path.join(settings.STATIC_ROOT, relative_path)
-    elif m_url and uri.startswith(m_url):
-        relative_path = uri.replace(m_url, '', 1).lstrip('/')
-        path = os.path.join(settings.MEDIA_ROOT, relative_path)
- 
-    if path and os.path.isfile(path):
-        return path
-    return uri
- 
- 
-# ─────────────────────────────────────────────────────────────────────────────
-# PDF — Rack
-# ─────────────────────────────────────────────────────────────────────────────
- 
-class IntervencionPDFView(View):
-    """Genera el reporte PDF de la intervención técnica de un rack."""
-    def get(self, request, registro_id):
-        registro = get_object_or_404(RegistroActividad, pk=registro_id)
-        rack = registro.rack
-        datos = registro.datos_salida if registro.datos_salida else registro.datos_entrada
- 
-        detalles_map = {c.numero: c for c in rack.detalles_compresores.all()}
-        compresores_media, compresores_baja = [], []
- 
-        for i in range(1, rack.total_compresores + 1):
-            detalle = detalles_map.get(i)
-            comp_data = {
-                'numero': i,
-                'modelo': detalle.modelo if detalle else '—',
-                'serie': detalle.serie if detalle else '—',
-                'corriente': datos.get(f'corriente_compresor_{i}', '—'),
-                'estado_aceite': datos.get(f'estado_aceite_{i}', '—'),
-                'nivel_aceite': datos.get(f'nivel_aceite_{i}', '—'),
-                'ruido': datos.get(f'ruido_{i}', '—'),
-                'dispara_aceite': datos.get(f'dispara_aceite_{i}', '—'),
-                'dispara_presion': datos.get(f'dispara_presion_{i}', '—'),
-                'funciona_traxoil': datos.get(f'funciona_traxoil_{i}', '—'),
-            }
-            if i <= rack.compresores_media:
-                compresores_media.append(comp_data)
-            else:
-                compresores_baja.append(comp_data)
- 
-        mapeo_rack = {
-            'ajuste_refrigerante':       {'si': 'SÍ', 'no': 'NO'},
-            'condensador_limpio':        {'limpio': 'LIMPIO', 'sucio': 'SUCIO'},
-            'nivel_acumulador':          {'alto': 'ALTO', 'medio': 'MEDIO', 'bajo': 'BAJO'},
-            'ventiladores_condensadora': {
-                'todos_ok': 'TODOS OPERATIVOS',
-                'un_averiado': 'UN VENTILADOR AVERIADO',
-                'varios_averiados': 'MÁS DE UN VENTILADOR AVERIADO',
-            },
-            'aislamiento_tuberias': {'bueno': 'BUENAS CONDICIONES', 'malo': 'MALAS CONDICIONES'},
-            'valvulas_cierre':      {'bueno': 'BUENAS CONDICIONES', 'malo': 'MALAS CONDICIONES'},
-            'manifolds_recibidores':{'bueno': 'BUENAS CONDICIONES', 'malo': 'MALAS CONDICIONES'},
-        }
-        readable = {
-            key: mapeo_rack[key].get(val, val) if key in mapeo_rack else val
-            for key, val in datos.items()
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Revisión Mensual Planta Eléctrica - SGMR</title>
+    <style>
+        /* ══ CONFIGURACIÓN GLOBAL ══ */
+        @page {
+            size: letter landscape;
+            margin: 0.6cm;
         }
  
-        context = {
-            'registro': registro,
-            'rack': rack,
-            'compresores_media': compresores_media,
-            'compresores_baja': compresores_baja,
-            'datos': datos,
-            'readable': readable,
-            'fecha': registro.hora_fin or registro.hora_inicio,
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 8pt;
+            color: #1E2A45;
+            background: #FFFFFF;
+            margin: 0;
+            padding: 0;
         }
  
-        template = get_template('operations/reporte_pdf.html')
-        html = template.render(context)
-        result = io.BytesIO()
-        pdf = pisa.pisaDocument(io.BytesIO(html.encode('UTF-8')), result, link_callback=link_callback)
- 
-        if not pdf.err:
-            response = HttpResponse(result.getvalue(), content_type='application/pdf')
-            filename = f"Reporte_{rack.id_qr}_{context['fecha'].strftime('%Y%m%d')}.pdf"
-            response['Content-Disposition'] = f'inline; filename="{filename}"'
-            return response
-        return HttpResponse('Error al generar PDF', status=500)
- 
- 
-# ─────────────────────────────────────────────────────────────────────────────
-# PDF — Planta Eléctrica
-# ─────────────────────────────────────────────────────────────────────────────
- 
-class PlantaPDFView(View):
-    """Genera el reporte PDF de la revisión mensual de una planta eléctrica."""
-    def get(self, request, registro_id):
-        registro = get_object_or_404(RegistroPlanta, pk=registro_id)
-        planta = registro.planta
- 
-        ESTADO_LABELS = {'bueno': 'Bueno', 'regular': 'Regular', 'malo': 'Malo', 'na': 'N/A', '': '—'}
-        lbl = lambda v: ESTADO_LABELS.get(v, v or '—')
- 
-        context = {
-            'registro': registro,
-            'planta': planta,
-            'fecha': registro.fecha,
-            'fugas':                  lbl(registro.fugas_aceite_combustible),
-            'nivel_combustible':      lbl(registro.nivel_combustible),
-            'bateria_estado_cargador':lbl(registro.bateria_estado_cargador),
-            'bateria_nivel_carga':    lbl(registro.bateria_nivel_carga),
-            'nivel_agua_radiador':    lbl(registro.nivel_agua_radiador),
-            'nivel_aceite':           lbl(registro.nivel_aceite),
-            'obstruccion':            lbl(registro.obstruccion),
-            'arranque_vacio':         lbl(registro.arranque_vacio),
-            'prueba_transferencia':   lbl(registro.prueba_transferencia_carga),
+        /* ══ CABECERA ══ */
+        .header-table {
+            width: 100%;
+            border-bottom: 2px solid #0047BB;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+        }
+        .header-logo { width: 100px; text-align: left; }
+        .doc-title-box { text-align: center; }
+        .doc-title {
+            font-size: 13pt;
+            font-weight: bold;
+            color: #0047BB;
+            text-transform: uppercase;
+            margin: 0;
+        }
+        .doc-subtitle { font-size: 8pt; color: #6B7DA0; margin-top: 2px; }
+        .header-meta { width: 220px; text-align: right; font-size: 7.5pt; }
+        .icontec-chip {
+            background: #FDF6E3;
+            color: #C8972A;
+            border: 1px solid #E2C97A;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 4px;
         }
  
-        template = get_template('operations/reporte_planta.html')
-        html = template.render(context, request)
-        result = io.BytesIO()
-        pdf = pisa.pisaDocument(io.BytesIO(html.encode('UTF-8')), result, link_callback=link_callback)
+        /* ══ TABLAS DE DATOS ══ */
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 6px;
+        }
+        .info-table td { border: 1px solid #D8E0EE; padding: 4px 8px; }
+        .lbl {
+            background-color: #F7F9FC;
+            font-weight: bold;
+            color: #6B7DA0;
+            text-transform: uppercase;
+            font-size: 7pt;
+            white-space: nowrap;
+        }
+        .val { font-weight: 600; color: #1E2A45; }
  
-        if not pdf.err:
-            response = HttpResponse(result.getvalue(), content_type='application/pdf')
-            filename = f"Planta_{planta.id_qr}_{registro.fecha}.pdf"
-            response['Content-Disposition'] = f'inline; filename="{filename}"'
-            return response
-        return HttpResponse('Error al generar PDF', status=500)
+        /* ══ SECCIONES ══ */
+        .section-bar {
+            background: #2E3A4E;
+            color: #FFFFFF;
+            padding: 4px 10px;
+            font-weight: bold;
+            font-size: 8.5pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 8px;
+            border-left: 4px solid #C8972A;
+        }
+ 
+        /* ══ TABLA VOLTAJES / AMPERAJES ══ */
+        .elec-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 4px;
+        }
+        .elec-table th {
+            background: #1E2A45;
+            color: #FFF;
+            font-size: 6.5pt;
+            padding: 3px 4px;
+            border: 1px solid #1A2333;
+            text-align: center;
+        }
+        .elec-table td {
+            border: 1px solid #D8E0EE;
+            padding: 4px;
+            font-size: 7.5pt;
+            text-align: center;
+            font-weight: 600;
+        }
+        .elec-table tr.even { background: #F7F9FC; }
+ 
+        /* ══ ESTADO badges ══ */
+        .badge {
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 6.5pt;
+            color: #FFF;
+            display: inline-block;
+        }
+        .badge-bueno  { background: #059669; }
+        .badge-regular{ background: #D97706; }
+        .badge-malo   { background: #DC2626; }
+        .badge-na     { background: #9CA3AF; }
+ 
+        /* ══ STATUS reporte ══ */
+        .status-badge { padding: 1px 4px; border-radius: 3px; font-weight: bold; font-size: 6.5pt; color: #FFF; }
+        .status-cerrado { background: #059669; }
+        .status-abierto { background: #D97706; }
+ 
+        /* ══ OBSERVACIONES / FIRMAS ══ */
+        .obs-box {
+            border: 1px solid #D8E0EE;
+            padding: 8px;
+            min-height: 50px;
+            margin-top: 4px;
+            font-size: 8pt;
+            line-height: 1.4;
+        }
+        .footer-table { width: 100%; margin-top: 20px; }
+        .sig-box {
+            border-top: 1px solid #1E2A45;
+            width: 80%;
+            margin: 0 auto;
+            padding-top: 4px;
+            text-align: center;
+            font-size: 7.5pt;
+        }
+    </style>
+</head>
+<body>
+ 
+{% load static %}
+ 
+<!-- ══ CABECERA ══ -->
+<table class="header-table">
+    <tr>
+        <td class="header-logo">
+            <img src="{% static 'image/logo_sostenibilidad.png' %}" width="110" style="display:block;">
+        </td>
+        <td class="doc-title-box">
+            <div class="doc-title">Formato de Revisión Mensual de Plantas Eléctricas</div>
+            <div class="doc-subtitle">SGMR · Olímpica S.A. · Mantenimiento Eléctrico</div>
+        </td>
+        <td class="header-meta">
+            <div class="icontec-chip">ORO ICONTEC · CER-88-25-047</div><br>
+            <b>ID:</b> #{{ registro.pk }} | <b>FECHA:</b> {{ fecha|date:"d/m/Y" }}<br>
+            <b>ESTADO:</b>
+            {% if registro.hora_fin %}
+                <span class="status-badge status-cerrado">CERRADO</span>
+            {% else %}
+                <span class="status-badge status-abierto">ABIERTO</span>
+            {% endif %}
+        </td>
+    </tr>
+</table>
+ 
+<!-- ══ DATOS GENERALES ══ -->
+<table class="info-table">
+    <tr>
+        <td class="lbl">Técnico</td>
+        <td class="val">
+            {% if registro.tecnico %}
+                {{ registro.tecnico.get_full_name|default:registro.tecnico.username }}
+            {% else %}—{% endif %}
+        </td>
+        <td class="lbl">Tienda</td>
+        <td class="val">{{ planta.tienda.nombre }}</td>
+        <td class="lbl">Fecha</td>
+        <td class="val">{{ fecha|date:"d/m/Y" }}</td>
+    </tr>
+    <tr>
+        <td class="lbl">Planta / QR</td>
+        <td class="val">{{ planta.id_qr }}</td>
+        <td class="lbl">Marca</td>
+        <td class="val">{{ planta.marca|default:"—" }}</td>
+        <td class="lbl">Capacidad</td>
+        <td class="val">{{ planta.capacidad_kva|default:"—" }} KVA</td>
+    </tr>
+</table>
+ 
+<!-- ══ ESTADO GENERAL DEL EQUIPO ══ -->
+<div class="section-bar">Estado General del Equipo</div>
+ 
+<table class="info-table" style="margin-top:4px;">
+    <!-- Fila batería -->
+    <tr>
+        <td class="lbl">Batería — Cantidad</td>
+        <td class="val">{{ registro.bateria_cantidad|default:"—" }}</td>
+        <td class="lbl">Modelo batería</td>
+        <td class="val">{{ registro.bateria_modelo|default:"—" }}</td>
+        <td class="lbl">Fecha instalación</td>
+        <td class="val">{{ registro.bateria_fecha_instalacion|date:"d/m/Y"|default:"—" }}</td>
+        <td class="lbl">Estado cargador</td>
+        <td class="val">
+            <span class="badge badge-{{ registro.bateria_estado_cargador }}">
+                {{ bateria_estado_cargador }}
+            </span>
+        </td>
+    </tr>
+    <!-- Fluidos -->
+    <tr>
+        <td class="lbl">Fugas aceite/combustible</td>
+        <td class="val"><span class="badge badge-{{ registro.fugas_aceite_combustible }}">{{ fugas }}</span></td>
+        <td class="lbl">Nivel combustible</td>
+        <td class="val"><span class="badge badge-{{ registro.nivel_combustible }}">{{ nivel_combustible }}</span></td>
+        <td class="lbl">Radiador</td>
+        <td class="val">{{ registro.tipo_radiador|default:"—" }}</td>
+        <td class="lbl">Nivel carga baterías</td>
+        <td class="val"><span class="badge badge-{{ registro.bateria_nivel_carga }}">{{ bateria_nivel_carga }}</span></td>
+    </tr>
+    <tr>
+        <td class="lbl">Horas funcionamiento</td>
+        <td class="val">{{ registro.horas_funcionamiento|default:"—" }} h</td>
+        <td class="lbl">Nivel de aceite</td>
+        <td class="val"><span class="badge badge-{{ registro.nivel_aceite }}">{{ nivel_aceite }}</span></td>
+        <td class="lbl">Nivel agua radiador</td>
+        <td class="val"><span class="badge badge-{{ registro.nivel_agua_radiador }}">{{ nivel_agua_radiador }}</span></td>
+        <td class="lbl">Obstrucción</td>
+        <td class="val"><span class="badge badge-{{ registro.obstruccion }}">{{ obstruccion }}</span></td>
+    </tr>
+</table>
+ 
+<!-- ══ VOLTAJES Y AMPERAJES ══ -->
+<div class="section-bar" style="margin-top:6px;">Voltajes y Amperajes</div>
+ 
+<table class="elec-table" style="margin-top:4px;">
+    <thead>
+        <tr>
+            <!-- L-L -->
+            <th>Voltaje L-L</th>
+            <th>L1-L2 (V)</th>
+            <th>L2-L3 (V)</th>
+            <th>L1-L3 (V)</th>
+            <!-- L-N -->
+            <th>Voltaje L-N</th>
+            <th>L1-N (V)</th>
+            <th>L2-N (V)</th>
+            <th>L3-N (V)</th>
+            <!-- Amp -->
+            <th>Amperaje</th>
+            <th>A1 (A)</th>
+            <th>A2 (A)</th>
+            <th>A3 (A)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="even">
+            <td style="color:#6B7DA0; font-size:6.5pt;">Línea a Línea</td>
+            <td>{{ registro.voltaje_l1l2|default:"—" }}</td>
+            <td>{{ registro.voltaje_l2l3|default:"—" }}</td>
+            <td>{{ registro.voltaje_l1l3|default:"—" }}</td>
+            <td style="color:#6B7DA0; font-size:6.5pt;">Línea a Neutro</td>
+            <td>{{ registro.voltaje_l1n|default:"—" }}</td>
+            <td>{{ registro.voltaje_l2n|default:"—" }}</td>
+            <td>{{ registro.voltaje_l3n|default:"—" }}</td>
+            <td style="color:#6B7DA0; font-size:6.5pt;">Por fase</td>
+            <td>{{ registro.amperaje_a1|default:"—" }}</td>
+            <td>{{ registro.amperaje_a2|default:"—" }}</td>
+            <td>{{ registro.amperaje_a3|default:"—" }}</td>
+        </tr>
+    </tbody>
+</table>
+ 
+<!-- ══ LECTURA DE DATOS ══ -->
+<div class="section-bar" style="margin-top:6px;">Lectura de Datos</div>
+<table class="info-table" style="margin-top:4px;">
+    <tr>
+        <td class="lbl">Voltaje generador</td>
+        <td class="val">{{ registro.voltaje_generador|default:"—" }} V</td>
+        <td class="lbl">Frecuencia</td>
+        <td class="val">{{ registro.frecuencia_hz|default:"—" }} Hz</td>
+        <td class="lbl">RPM</td>
+        <td class="val">{{ registro.rpm|default:"—" }}</td>
+        <td class="lbl">Voltaje DC cargador</td>
+        <td class="val">{{ registro.voltaje_dc_cargador|default:"—" }} V</td>
+    </tr>
+</table>
+ 
+<!-- ══ ARRANQUE Y PRUEBA DE TRANSFERENCIA ══ -->
+<div class="section-bar" style="margin-top:6px;">Arranque del Equipo — Prueba de Transferencia</div>
+<table class="info-table" style="margin-top:4px;">
+    <tr>
+        <td class="lbl">Arranque en vacío</td>
+        <td class="val">
+            <span class="badge badge-{{ registro.arranque_vacio }}">{{ arranque_vacio }}</span>
+        </td>
+        <td class="lbl">Prueba de transferencia con carga</td>
+        <td class="val">
+            <span class="badge badge-{{ registro.prueba_transferencia_carga }}">{{ prueba_transferencia }}</span>
+        </td>
+        <td class="lbl">Duración</td>
+        <td class="val">{{ registro.duracion_minutos|default:"—" }} min</td>
+    </tr>
+</table>
+ 
+<!-- ══ OBSERVACIONES ══ -->
+<div class="section-bar" style="margin-top:6px;">Observaciones del Técnico</div>
+<div class="obs-box">
+    {{ registro.observaciones|default:"Sin observaciones adicionales registradas." }}
+</div>
+ 
+<!-- ══ FIRMAS ══ -->
+<table class="footer-table">
+    <tr>
+        <td>
+            <div class="sig-box">
+                {% if registro.tecnico %}
+                    {{ registro.tecnico.get_full_name|default:registro.tecnico.username }}
+                {% endif %}<br>
+                <b>Responsable Técnico</b>
+            </div>
+        </td>
+        <td>
+            <div class="sig-box">
+                <br><b>Coordinador de Mantenimiento</b>
+            </div>
+        </td>
+        <td>
+            <div class="sig-box">
+                <br><b>Jefe de Mantenimiento</b>
+            </div>
+        </td>
+    </tr>
+</table>
+ 
+<div style="text-align:center; margin-top:12px; font-size:6pt; color:#6B7DA0;">
+    Generado automáticamente por SGMR · Sello ORO ICONTEC · CER-88-25-047 · Documento técnico oficial
+</div>
+ 
+</body>
+</html>
