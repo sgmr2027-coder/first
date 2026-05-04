@@ -300,27 +300,31 @@ class RevisionPlantaView(TecnicoRequiredMixin, View):
 # ─────────────────────────────────────────────────────────────────────────────
  
 def link_callback(uri, rel):
-    """Convierte URIs de static/media en rutas absolutas para xhtml2pdf."""
-    s_url = settings.STATIC_URL
-    m_url = settings.MEDIA_URL
+    """
+    Convierte URIs de static/media en rutas absolutas para xhtml2pdf.
+    """
+    import os
+    from django.conf import settings
+    from django.contrib.staticfiles import finders
+
+    # 1. Intentar resolver con finders (especialmente útil en desarrollo y para assets estáticos)
+    clean_uri = uri.replace(settings.STATIC_URL, "")
+    result = finders.find(clean_uri)
+    if result:
+        return result
+
+    # 2. Fallback manual para STATIC_ROOT y MEDIA_ROOT
     path = None
- 
-    if uri.startswith(s_url):
-        relative_path = uri.replace(s_url, '', 1).lstrip('/')
-        if settings.STATICFILES_DIRS:
-            for d in settings.STATICFILES_DIRS:
-                trial = os.path.join(d, relative_path)
-                if os.path.exists(trial):
-                    path = trial
-                    break
-        if not path:
-            path = os.path.join(settings.STATIC_ROOT, relative_path)
-    elif m_url and uri.startswith(m_url):
-        relative_path = uri.replace(m_url, '', 1).lstrip('/')
+    if uri.startswith(settings.STATIC_URL):
+        relative_path = uri.replace(settings.STATIC_URL, "", 1).lstrip('/')
+        path = os.path.join(settings.STATIC_ROOT, relative_path)
+    elif settings.MEDIA_URL and uri.startswith(settings.MEDIA_URL):
+        relative_path = uri.replace(settings.MEDIA_URL, "", 1).lstrip('/')
         path = os.path.join(settings.MEDIA_ROOT, relative_path)
- 
+
     if path and os.path.isfile(path):
         return path
+    
     return uri
  
  
@@ -427,7 +431,7 @@ class PlantaPDFView(View):
         }
  
         template = get_template('operations/reporte_pdf_planta.html')
-        html = template.render(context, request)
+        html = template.render(context)
         result = io.BytesIO()
         pdf = pisa.pisaDocument(io.BytesIO(html.encode('UTF-8')), result, link_callback=link_callback)
  
