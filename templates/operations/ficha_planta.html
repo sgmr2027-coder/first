@@ -55,11 +55,9 @@
         <form method="post" action="{% url 'operations:iniciar_planta' planta_id=planta.pk %}">
           {% csrf_token %}
           <div class="d-grid gap-2">
-            {% for value, label in tipos %}
-              <button type="submit" name="tipo_actividad" value="{{ value }}" class="btn btn-primary py-2 fw-bold">
-                <i class="bi bi-play-fill me-1"></i> Iniciar {{ label }}
-              </button>
-            {% endfor %}
+            <button type="submit" class="btn btn-primary py-3 fw-bold">
+              <i class="bi bi-play-fill me-1"></i> INICIAR REVISIÓN MENSUAL
+            </button>
           </div>
         </form>
       </div>

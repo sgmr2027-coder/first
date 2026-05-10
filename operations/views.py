@@ -157,7 +157,7 @@ def api_rack_qr(request, id_qr):
     if getattr(request.user, 'rol', None) != Rol.TECNICO:
         return JsonResponse({'ok': False, 'error': 'Solo técnicos pueden escanear.'}, status=403)
     try:
-        rack = Rack.objects.get(id_qr=id_qr, activo=True)
+        rack = Rack.objects.get(id_qr__iexact=id_qr.strip(), activo=True)
     except Rack.DoesNotExist:
         return JsonResponse({'ok': False, 'error': f'No se encontró el Rack con código {id_qr}'}, status=404)
     
@@ -184,7 +184,7 @@ def api_planta_qr(request, id_qr):
     if getattr(request.user, 'rol', None) != Rol.TECNICO:
         return JsonResponse({'ok': False, 'error': 'Solo técnicos pueden escanear.'}, status=403)
     try:
-        planta = PlantaElectrica.objects.get(id_qr=id_qr, activo=True)
+        planta = PlantaElectrica.objects.get(id_qr__iexact=id_qr.strip(), activo=True)
     except PlantaElectrica.DoesNotExist:
         return JsonResponse({'ok': False, 'error': f'No se encontró la Planta con código {id_qr}'}, status=404)
 
@@ -212,7 +212,6 @@ class FichaPlantaView(TecnicoRequiredMixin, View):
         return render(request, 'operations/ficha_planta.html', {
             'planta': planta,
             'ultimo_registro': ultimo_registro,
-            'tipos': TipoActividad.choices,
         })
  
  
