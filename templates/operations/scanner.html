@@ -156,8 +156,9 @@
             : URLS.ficha_planta.replace('999999', data.id);
           window.location.href = url;
         } else {
-          resultado.innerHTML = '<div class="alert alert-danger">❌ ' + (data.error || 'Equipo no encontrado.') +
-            '<br><small>Código: <code>' + idQr + '</code></small></div>';
+          var errorMsg = data.error || 'Equipo no encontrado (Respuesta inválida).';
+          resultado.innerHTML = '<div class="alert alert-danger">❌ ' + errorMsg +
+            '<br><small>Código enviado: <code>' + idQr + '</code></small></div>';
           procesando = false;
           btnContinuar.disabled = false;
         }
