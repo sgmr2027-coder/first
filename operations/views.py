@@ -154,16 +154,18 @@ class CheckOutView(TecnicoRequiredMixin, View):
 @login_required
 def api_rack_qr(request, id_qr):
     """Devuelve JSON del rack. Solo técnicos."""
+    print(f"DEBUG: api_rack_qr recibida con id_qr='{id_qr}'")
     if getattr(request.user, 'rol', None) != Rol.TECNICO:
-        return JsonResponse({'ok': False, 'error': 'Solo técnicos pueden escanear.'}, status=403)
+        return JsonResponse({'ok': False, 'error': 'Solo técnicos pueden escanear.'})
     try:
+        # Búsqueda insensible a mayúsculas y sin espacios
         rack = Rack.objects.get(id_qr__iexact=id_qr.strip(), activo=True)
     except Rack.DoesNotExist:
         disponibles = list(Rack.objects.filter(activo=True).values_list('id_qr', flat=True))
         return JsonResponse({
             'ok': False, 
-            'error': f'No se encontró el Rack con código "{id_qr}". Disponibles: {disponibles}'
-        }, status=404)
+            'error': f'No se encontró el Rack con código "{id_qr}". Disponibles en DB: {disponibles}'
+        })
     
     return JsonResponse({
         'ok': True,
@@ -185,16 +187,17 @@ def api_rack_qr(request, id_qr):
 @login_required
 def api_planta_qr(request, id_qr):
     """Devuelve JSON de la planta eléctrica. Solo técnicos."""
+    print(f"DEBUG: api_planta_qr recibida con id_qr='{id_qr}'")
     if getattr(request.user, 'rol', None) != Rol.TECNICO:
-        return JsonResponse({'ok': False, 'error': 'Solo técnicos pueden escanear.'}, status=403)
+        return JsonResponse({'ok': False, 'error': 'Solo técnicos pueden escanear.'})
     try:
         planta = PlantaElectrica.objects.get(id_qr__iexact=id_qr.strip(), activo=True)
     except PlantaElectrica.DoesNotExist:
         disponibles = list(PlantaElectrica.objects.filter(activo=True).values_list('id_qr', flat=True))
         return JsonResponse({
             'ok': False, 
-            'error': f'No se encontró la Planta con código "{id_qr}". Disponibles: {disponibles}'
-        }, status=404)
+            'error': f'No se encontró la Planta con código "{id_qr}". Disponibles en DB: {disponibles}'
+        })
 
     return JsonResponse({
         'ok': True,
