@@ -159,7 +159,11 @@ def api_rack_qr(request, id_qr):
     try:
         rack = Rack.objects.get(id_qr__iexact=id_qr.strip(), activo=True)
     except Rack.DoesNotExist:
-        return JsonResponse({'ok': False, 'error': f'No se encontró el Rack con código {id_qr}'}, status=404)
+        disponibles = list(Rack.objects.filter(activo=True).values_list('id_qr', flat=True))
+        return JsonResponse({
+            'ok': False, 
+            'error': f'No se encontró el Rack con código "{id_qr}". Disponibles: {disponibles}'
+        }, status=404)
     
     return JsonResponse({
         'ok': True,
@@ -186,7 +190,11 @@ def api_planta_qr(request, id_qr):
     try:
         planta = PlantaElectrica.objects.get(id_qr__iexact=id_qr.strip(), activo=True)
     except PlantaElectrica.DoesNotExist:
-        return JsonResponse({'ok': False, 'error': f'No se encontró la Planta con código {id_qr}'}, status=404)
+        disponibles = list(PlantaElectrica.objects.filter(activo=True).values_list('id_qr', flat=True))
+        return JsonResponse({
+            'ok': False, 
+            'error': f'No se encontró la Planta con código "{id_qr}". Disponibles: {disponibles}'
+        }, status=404)
 
     return JsonResponse({
         'ok': True,

@@ -16,7 +16,7 @@ urlpatterns = [
     path('registro/<int:registro_id>/pdf/',            views.IntervencionPDFView.as_view(), name='pdf_rack'),
  
     # ── Rack — API QR ─────────────────────────────────────────────────────────
-    path('api/rack/<str:id_qr>/', views.api_rack_qr, name='api_rack_qr'),
+    path('api/rack/<path:id_qr>/', views.api_rack_qr, name='api_rack_qr'),
  
     # ── Planta Eléctrica — flujo completo ────────────────────────────────────
     path('planta/<int:planta_id>/',          views.FichaPlantaView.as_view(),          name='ficha_planta'),
@@ -25,5 +25,5 @@ urlpatterns = [
     path('planta/revision/<int:registro_id>/pdf/', views.PlantaPDFView.as_view(),      name='pdf_planta'),
  
     # ── Planta Eléctrica — API QR ────────────────────────────────────────────
-    path('api/planta/<str:id_qr>/', views.api_planta_qr, name='api_planta_qr'),
+    path('api/planta/<path:id_qr>/', views.api_planta_qr, name='api_planta_qr'),
 ]
