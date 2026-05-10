@@ -141,12 +141,13 @@
  
     fetch(apiUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
       .then(function (r) {
-        if (!r.ok) {
-          return r.text().then(function (body) {
-            throw new Error('HTTP ' + r.status + ' — ' + body.substring(0, 200));
-          });
-        }
-        return r.json();
+        return r.text().then(function(text) {
+          try {
+            return JSON.parse(text);
+          } catch(e) {
+            throw new Error('Respuesta no es JSON (Status '+r.status+'). Inicio: ' + text.substring(0, 150));
+          }
+        });
       })
       .then(function (data) {
         if (data.ok) {
@@ -156,7 +157,7 @@
             : URLS.ficha_planta.replace('999999', data.id);
           window.location.href = url;
         } else {
-          var errorMsg = data.error || 'Equipo no encontrado (Respuesta inválida).';
+          var errorMsg = data.error || 'Error desconocido en servidor.';
           resultado.innerHTML = '<div class="alert alert-danger">❌ ' + errorMsg +
             '<br><small>Código enviado: <code>' + idQr + '</code></small></div>';
           procesando = false;
@@ -165,7 +166,7 @@
       })
       .catch(function (err) {
         console.error('Error equipo:', err);
-        resultado.innerHTML = '<div class="alert alert-danger">❌ Error: ' + err.message + '</div>';
+        resultado.innerHTML = '<div class="alert alert-danger">❌ Error de conexión/servidor:<br><small>' + err.message + '</small></div>';
         procesando = false;
         btnContinuar.disabled = false;
       });

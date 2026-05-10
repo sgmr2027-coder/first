@@ -154,29 +154,32 @@ class CheckOutView(TecnicoRequiredMixin, View):
 @login_required
 def api_rack_qr(request, id_qr):
     """Devuelve JSON del rack. Solo técnicos."""
-    print(f"DEBUG: api_rack_qr recibida con id_qr='{id_qr}'")
-    if getattr(request.user, 'rol', None) != Rol.TECNICO:
-        return JsonResponse({'ok': False, 'error': 'Solo técnicos pueden escanear.'})
     try:
+        print(f"DEBUG: api_rack_qr recibida con id_qr='{id_qr}'")
+        if getattr(request.user, 'rol', None) != Rol.TECNICO:
+            return JsonResponse({'ok': False, 'error': 'Solo técnicos pueden escanear.'})
+        
         # Búsqueda insensible a mayúsculas y sin espacios
         rack = Rack.objects.get(id_qr__iexact=id_qr.strip(), activo=True)
+        
+        return JsonResponse({
+            'ok': True,
+            'id': rack.pk,
+            'id_qr': rack.id_qr,
+            'tienda': rack.tienda.nombre,
+            'marca': rack.marca,
+            'ubicacion': rack.ubicacion,
+            'compresores_media': rack.compresores_media,
+            'compresores_baja': rack.compresores_baja,
+        })
     except Rack.DoesNotExist:
-        disponibles = list(Rack.objects.filter(activo=True).values_list('id_qr', flat=True))
+        disponibles = list(Rack.objects.filter(activo=True).values_list('id_qr', flat=True)[:10])
         return JsonResponse({
             'ok': False, 
-            'error': f'No se encontró el Rack con código "{id_qr}". Disponibles en DB: {disponibles}'
+            'error': f'No se encontró "{id_qr}". Disponibles: {disponibles}'
         })
-    
-    return JsonResponse({
-        'ok': True,
-        'id': rack.pk,
-        'id_qr': rack.id_qr,
-        'tienda': rack.tienda.nombre,
-        'marca': rack.marca,
-        'ubicacion': rack.ubicacion,
-        'compresores_media': rack.compresores_media,
-        'compresores_baja': rack.compresores_baja,
-    })
+    except Exception as e:
+        return JsonResponse({'ok': False, 'error': f'ERROR CRÍTICO: {str(e)}'})
  
  
 # ─────────────────────────────────────────────────────────────────────────────
@@ -187,28 +190,31 @@ def api_rack_qr(request, id_qr):
 @login_required
 def api_planta_qr(request, id_qr):
     """Devuelve JSON de la planta eléctrica. Solo técnicos."""
-    print(f"DEBUG: api_planta_qr recibida con id_qr='{id_qr}'")
-    if getattr(request.user, 'rol', None) != Rol.TECNICO:
-        return JsonResponse({'ok': False, 'error': 'Solo técnicos pueden escanear.'})
     try:
+        print(f"DEBUG: api_planta_qr recibida con id_qr='{id_qr}'")
+        if getattr(request.user, 'rol', None) != Rol.TECNICO:
+            return JsonResponse({'ok': False, 'error': 'Solo técnicos pueden escanear.'})
+        
         planta = PlantaElectrica.objects.get(id_qr__iexact=id_qr.strip(), activo=True)
+        
+        return JsonResponse({
+            'ok': True,
+            'id': planta.pk,
+            'id_qr': planta.id_qr,
+            'tienda': planta.tienda.nombre,
+            'marca': planta.marca,
+            'modelo': planta.modelo,
+            'capacidad_kva': str(planta.capacidad_kva) if planta.capacidad_kva else None,
+            'ubicacion': planta.ubicacion,
+        })
     except PlantaElectrica.DoesNotExist:
-        disponibles = list(PlantaElectrica.objects.filter(activo=True).values_list('id_qr', flat=True))
+        disponibles = list(PlantaElectrica.objects.filter(activo=True).values_list('id_qr', flat=True)[:10])
         return JsonResponse({
             'ok': False, 
-            'error': f'No se encontró la Planta con código "{id_qr}". Disponibles en DB: {disponibles}'
+            'error': f'No se encontró "{id_qr}". Disponibles: {disponibles}'
         })
-
-    return JsonResponse({
-        'ok': True,
-        'id': planta.pk,
-        'id_qr': planta.id_qr,
-        'tienda': planta.tienda.nombre,
-        'marca': planta.marca,
-        'modelo': planta.modelo,
-        'capacidad_kva': str(planta.capacidad_kva) if planta.capacidad_kva else None,
-        'ubicacion': planta.ubicacion,
-    })
+    except Exception as e:
+        return JsonResponse({'ok': False, 'error': f'ERROR CRÍTICO: {str(e)}'})
  
  
 # ─────────────────────────────────────────────────────────────────────────────
