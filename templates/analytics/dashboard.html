@@ -481,7 +481,15 @@
             {% endfor %}
           </select>
         </div>
-        <!-- Filtro por Rack removido para dashboard unificado -->
+        <div class="col-12 col-sm-6 col-md-auto">
+          <label for="select-tipo" class="form-label">Tipo de Activo</label>
+          <select name="tipo_activo" id="select-tipo" class="form-select form-select-sm" style="min-width:10rem;"
+            data-selected="{{ tipo_activo_seleccionado }}" onchange="this.form.submit()">
+            <option value="todos">Racks + Plantas</option>
+            <option value="racks">Solo Racks</option>
+            <option value="plantas">Solo Plantas</option>
+          </select>
+        </div>
         <div class="col-12 col-sm-6 col-md-auto">
           <label for="id_fecha_inicio" class="form-label">Desde</label>
           <input type="date" name="fecha_inicio" id="id_fecha_inicio" class="form-control form-control-sm"
@@ -510,7 +518,7 @@
       <div class="section-header-icon"><i class="bi bi-clock-history"></i></div>
       <span class="section-header-title">Historial de Visitas</span>
     </div>
-    <a href="{% url 'analytics:exportar' %}?tienda={{ tienda_seleccionada }}&rack={{ rack_seleccionado }}&fecha_inicio={{ fecha_inicio_seleccionada }}&fecha_fin={{ fecha_fin_seleccionada }}"
+    <a href="{% url 'analytics:exportar' %}?tienda={{ tienda_seleccionada }}&tipo_activo={{ tipo_activo_seleccionado }}&fecha_inicio={{ fecha_inicio_seleccionada }}&fecha_fin={{ fecha_fin_seleccionada }}"
       class="btn-exportar">
       <i class="bi bi-download"></i> Exportar CSV
     </a>
@@ -617,11 +625,13 @@
       selectTienda.value = selectedTienda;
     }
 
-    // Restaurar selección de Rack
-    const selectRack = document.getElementById('select-rack');
-    const selectedRack = selectRack.getAttribute('data-selected');
-    if (selectedRack) {
-      selectRack.value = selectedRack;
+    // Restaurar selección de Tipo
+    const selectTipo = document.getElementById('select-tipo');
+    if (selectTipo) {
+      const selectedTipo = selectTipo.getAttribute('data-selected');
+      if (selectedTipo) {
+        selectTipo.value = selectedTipo;
+      }
     }
   });
 </script>
