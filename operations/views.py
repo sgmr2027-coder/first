@@ -154,14 +154,11 @@ class CheckOutView(TecnicoRequiredMixin, View):
 @login_required
 def api_rack_qr(request, id_qr):
     """Devuelve JSON del rack. Solo técnicos."""
+    if getattr(request.user, 'rol', None) != Rol.TECNICO:
+        return JsonResponse({'ok': False, 'error': 'Acceso restringido.'}, status=403)
     try:
-        print(f"DEBUG: api_rack_qr recibida con id_qr='{id_qr}'")
-        if getattr(request.user, 'rol', None) != Rol.TECNICO:
-            return JsonResponse({'ok': False, 'error': 'Solo técnicos pueden escanear.'})
-        
         # Búsqueda insensible a mayúsculas y sin espacios
         rack = Rack.objects.get(id_qr__iexact=id_qr.strip(), activo=True)
-        
         return JsonResponse({
             'ok': True,
             'id': rack.pk,
@@ -173,13 +170,9 @@ def api_rack_qr(request, id_qr):
             'compresores_baja': rack.compresores_baja,
         })
     except Rack.DoesNotExist:
-        disponibles = list(Rack.objects.filter(activo=True).values_list('id_qr', flat=True)[:10])
-        return JsonResponse({
-            'ok': False, 
-            'error': f'No se encontró "{id_qr}". Disponibles: {disponibles}'
-        })
+        return JsonResponse({'ok': False, 'error': f'Rack "{id_qr}" no encontrado.'}, status=404)
     except Exception as e:
-        return JsonResponse({'ok': False, 'error': f'ERROR CRÍTICO: {str(e)}'})
+        return JsonResponse({'ok': False, 'error': 'Error interno del servidor.'}, status=500)
  
  
 # ─────────────────────────────────────────────────────────────────────────────
@@ -190,13 +183,10 @@ def api_rack_qr(request, id_qr):
 @login_required
 def api_planta_qr(request, id_qr):
     """Devuelve JSON de la planta eléctrica. Solo técnicos."""
+    if getattr(request.user, 'rol', None) != Rol.TECNICO:
+        return JsonResponse({'ok': False, 'error': 'Acceso restringido.'}, status=403)
     try:
-        print(f"DEBUG: api_planta_qr recibida con id_qr='{id_qr}'")
-        if getattr(request.user, 'rol', None) != Rol.TECNICO:
-            return JsonResponse({'ok': False, 'error': 'Solo técnicos pueden escanear.'})
-        
         planta = PlantaElectrica.objects.get(id_qr__iexact=id_qr.strip(), activo=True)
-        
         return JsonResponse({
             'ok': True,
             'id': planta.pk,
@@ -208,13 +198,9 @@ def api_planta_qr(request, id_qr):
             'ubicacion': planta.ubicacion,
         })
     except PlantaElectrica.DoesNotExist:
-        disponibles = list(PlantaElectrica.objects.filter(activo=True).values_list('id_qr', flat=True)[:10])
-        return JsonResponse({
-            'ok': False, 
-            'error': f'No se encontró "{id_qr}". Disponibles: {disponibles}'
-        })
+        return JsonResponse({'ok': False, 'error': f'Planta "{id_qr}" no encontrada.'}, status=404)
     except Exception as e:
-        return JsonResponse({'ok': False, 'error': f'ERROR CRÍTICO: {str(e)}'})
+        return JsonResponse({'ok': False, 'error': 'Error interno del servidor.'}, status=500)
  
  
 # ─────────────────────────────────────────────────────────────────────────────

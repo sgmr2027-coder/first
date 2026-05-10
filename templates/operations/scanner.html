@@ -1,179 +1,154 @@
 {% extends 'base.html' %}
 {% block title %}Seleccionar Equipo — SGMR{% endblock %}
- 
+
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-12 col-md-8 col-lg-6">
-    <h2 class="h5 mb-3">Seleccionar Equipo</h2>
- 
-    {% if tarea_abierta %}
-    <div class="alert alert-warning">
-      <strong>Tienes una actividad abierta en otro equipo, ciérrala para continuar:</strong>
-      {{ tarea_abierta.rack }}.
-      <a href="{% url 'operations:checkin' registro_id=tarea_abierta.pk %}">Ir a parámetros de entrada</a> o
-      <a href="{% url 'operations:checkout' registro_id=tarea_abierta.pk %}">Ir a cierre</a>.
-    </div>
-    {% endif %}
- 
-    <div class="card">
-      <div class="card-header">Tipo de equipo</div>
-      <div class="card-body">
- 
-        <!-- PASO 1: Tipo de equipo -->
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Selecciona el tipo de equipo</label>
-          <div class="d-flex gap-2">
-            <button type="button" class="btn btn-outline-primary w-50 btn-tipo" data-tipo="rack">
-              🧊 Rack de Compresores
-            </button>
-            <button type="button" class="btn btn-outline-warning w-50 btn-tipo" data-tipo="planta">
-              ⚡ Planta Eléctrica
-            </button>
+    <div class="card shadow-sm border-0 rounded-3">
+      <div class="card-header bg-white py-3 border-bottom-0">
+        <h1 class="h5 mb-0 fw-bold text-secondary">Seleccionar Equipo</h1>
+      </div>
+      <div class="card-body pt-0">
+        
+        {% if tarea_abierta %}
+        <div class="alert alert-warning small mb-4">
+          <i class="bi bi-exclamation-circle-fill me-2"></i>
+          <strong>Actividad abierta en:</strong> {{ tarea_abierta.rack }}.
+          <div class="mt-2">
+            <a href="{% url 'operations:checkin' registro_id=tarea_abierta.pk %}" class="btn btn-sm btn-warning">Check-in</a>
+            <a href="{% url 'operations:checkout' registro_id=tarea_abierta.pk %}" class="btn btn-sm btn-outline-warning">Cierre</a>
           </div>
         </div>
- 
-        <!-- PASO 2: Select de equipo -->
-        <div id="contenedor-select" class="mb-3" style="display:none;">
-          <label for="select-equipo" class="form-label" id="label-equipo">Equipo</label>
-          <select id="select-equipo" class="form-select">
-            <option value="">— Selecciona un equipo —</option>
+        {% endif %}
+
+        <label class="form-label text-muted small fw-bold mb-3">TIPO DE EQUIPO</label>
+        <div class="row g-2 mb-4">
+          <div class="col-6">
+            <input type="radio" class="btn-check" name="tipo_equipo" id="btn_rack" value="rack" autocomplete="off" checked>
+            <label class="btn btn-outline-primary w-100 py-3 d-flex flex-column align-items-center justify-content-center gap-2 border-2" for="btn_rack">
+              <i class="bi bi-cpu fs-4"></i>
+              <span class="small fw-bold text-uppercase">Rack de Compresores</span>
+            </label>
+          </div>
+          <div class="col-6">
+            <input type="radio" class="btn-check" name="tipo_equipo" id="btn_planta" value="planta" autocomplete="off">
+            <label class="btn btn-outline-warning w-100 py-3 d-flex flex-column align-items-center justify-content-center gap-2 border-2" for="btn_planta">
+              <i class="bi bi-lightning-charge fs-4"></i>
+              <span class="small fw-bold text-uppercase">Planta Eléctrica</span>
+            </label>
+          </div>
+        </div>
+
+        <div id="container_rack">
+          <label class="form-label text-muted small fw-bold">SELECCIONAR RACK</label>
+          <select class="form-select form-select-lg mb-4" id="select_rack">
+            <option value="">— Seleccionar —</option>
+            {% for rack in racks %}
+              <option value="{{ rack.id_qr }}">{{ rack.tienda.nombre }} — {{ rack.ubicacion|default:"Rack" }} ({{ rack.id_qr }})</option>
+            {% endfor %}
           </select>
         </div>
- 
-        <button id="btn-continuar" class="btn btn-primary w-100" disabled>Continuar →</button>
+
+        <div id="container_planta" class="d-none">
+          <label class="form-label text-muted small fw-bold">SELECCIONAR PLANTA</label>
+          <select class="form-select form-select-lg mb-4" id="select_planta">
+            <option value="">— Seleccionar —</option>
+            {% for p in plantas %}
+              <option value="{{ p.id_qr }}">{{ p.tienda.nombre }} — {{ p.ubicacion|default:"Planta" }} ({{ p.id_qr }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <button id="btn_continuar" class="btn btn-primary btn-lg w-100 py-3 fw-bold shadow-sm mt-2 text-uppercase">
+          Continuar <i class="bi bi-arrow-right ms-1"></i>
+        </button>
+
+        <div id="resultado" class="mt-4"></div>
       </div>
     </div>
- 
-    <div id="resultado" class="mt-3"></div>
   </div>
 </div>
 {% endblock %}
- 
+
 {% block extra_js %}
-{# Bloque de datos: Django genera JSON puro, el linter no lo toca #}
-<script id="sgmr-data" type="application/json">
-{
-  "racks": [
-    {% for rack in racks %}
-    {"id_qr": "{{ rack.id_qr|escapejs }}", "label": "{{ rack.tienda.nombre|escapejs }} — {{ rack.ubicacion|escapejs }} ({{ rack.id_qr|escapejs }})"}{% if not forloop.last %},{% endif %}
-    {% endfor %}
-  ],
-  "plantas": [
-    {% for planta in plantas %}
-    {"id_qr": "{{ planta.id_qr|escapejs }}", "label": "{{ planta.tienda.nombre|escapejs }} — {{ planta.ubicacion|escapejs }} ({{ planta.id_qr|escapejs }})"}{% if not forloop.last %},{% endif %}
-    {% endfor %}
-  ],
-  "urls": {
+<script>
+(function () {
+  const URLS = {
     "api_rack":    "{% url 'operations:api_rack_qr'   id_qr='__ID__' %}",
     "api_planta":  "{% url 'operations:api_planta_qr' id_qr='__ID__' %}",
     "ficha_rack":  "{% url 'operations:ficha'         rack_id=999999 %}",
-    "ficha_planta":"{% url 'operations:ficha_planta'  planta_id=999999 %}"
-  }
-}
-</script>
- 
-{# JS puro — sin ninguna etiqueta Django, el linter queda feliz #}
-<script>
-(function () {
-  // Leer datos inyectados por Django desde el bloque JSON
-  const cfg    = JSON.parse(document.getElementById('sgmr-data').textContent);
-  const RACKS   = cfg.racks;
-  const PLANTAS = cfg.plantas;
-  const URLS    = cfg.urls;
- 
-  // DOM
-  const btnsTipo         = document.querySelectorAll('.btn-tipo');
-  const contenedorSelect = document.getElementById('contenedor-select');
-  const selectEquipo     = document.getElementById('select-equipo');
-  const labelEquipo      = document.getElementById('label-equipo');
-  const btnContinuar     = document.getElementById('btn-continuar');
-  const resultado        = document.getElementById('resultado');
- 
-  let tipoActivo = null;
+    "ficha_planta": "{% url 'operations:ficha_planta' planta_id=999999 %}"
+  };
+
+  const btnRack      = document.getElementById('btn_rack');
+  const btnPlanta    = document.getElementById('btn_planta');
+  const contRack     = document.getElementById('container_rack');
+  const contPlanta   = document.getElementById('container_planta');
+  const selectRack   = document.getElementById('select_rack');
+  const selectPlanta = document.getElementById('select_planta');
+  const btnContinuar = document.getElementById('btn_continuar');
+  const resultado    = document.getElementById('resultado');
+
+  let esRack = true;
   let procesando = false;
- 
-  // PASO 1 — elegir tipo de equipo
-  btnsTipo.forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      btnsTipo.forEach(function (b) { b.classList.remove('active'); });
-      this.classList.add('active');
- 
-      tipoActivo = this.dataset.tipo;
-      resultado.innerHTML = '';
-      btnContinuar.disabled = true;
- 
-      var datos = tipoActivo === 'rack' ? RACKS : PLANTAS;
-      selectEquipo.innerHTML = '<option value="">— Selecciona un equipo —</option>';
- 
-      if (datos.length === 0) {
-        selectEquipo.innerHTML += '<option disabled>No hay equipos activos registrados.</option>';
-      } else {
-        datos.forEach(function (item) {
-          var opt = document.createElement('option');
-          opt.value = item.id_qr;
-          opt.textContent = item.label;
-          selectEquipo.appendChild(opt);
-        });
-      }
- 
-      labelEquipo.textContent = tipoActivo === 'rack' ? 'Rack' : 'Planta Eléctrica';
-      contenedorSelect.style.display = 'block';
-    });
-  });
- 
-  // PASO 2 — elegir equipo del select
-  selectEquipo.addEventListener('change', function () {
-    btnContinuar.disabled = !this.value;
+
+  btnRack.addEventListener('change', function() {
+    esRack = true;
+    contRack.classList.remove('d-none');
+    contPlanta.classList.add('d-none');
     resultado.innerHTML = '';
   });
- 
-  // PASO 3 — buscar por QR y redirigir a la ficha
+
+  btnPlanta.addEventListener('change', function() {
+    esRack = false;
+    contRack.classList.add('d-none');
+    contPlanta.classList.remove('d-none');
+    resultado.innerHTML = '';
+  });
+
   function buscarEquipo(idQr) {
-    if (procesando || !idQr || !tipoActivo) { return; }
+    if (!idQr || procesando) return;
     procesando = true;
     btnContinuar.disabled = true;
- 
-    var esRack  = tipoActivo === 'rack';
-    var apiUrl  = (esRack ? URLS.api_rack : URLS.api_planta).replace('__ID__', encodeURIComponent(idQr));
-    var etiqueta = esRack ? 'rack' : 'planta';
- 
-    resultado.innerHTML = '<div class="alert alert-info">🔍 Buscando ' + etiqueta + ' <code>' + idQr + '</code>…</div>';
- 
+    
+    const etiqueta = esRack ? 'Rack' : 'Planta';
+    resultado.innerHTML = '<div class="alert alert-light border small text-center text-muted"><i class="bi bi-search me-2"></i>Verificando ' + etiqueta + '...</div>';
+
+    const apiUrl = (esRack ? URLS.api_rack : URLS.api_planta).replace('__ID__', encodeURIComponent(idQr));
+
     fetch(apiUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-      .then(function (r) {
-        return r.text().then(function(text) {
-          try {
-            return JSON.parse(text);
-          } catch(e) {
-            throw new Error('Respuesta no es JSON (Status '+r.status+'). Inicio: ' + text.substring(0, 150));
-          }
-        });
+      .then(r => {
+        if (!r.ok) {
+          return r.json().then(data => { throw new Error(data.error || 'Error HTTP ' + r.status); })
+                        .catch(() => { throw new Error('Error de conexión con el servidor.'); });
+        }
+        return r.json();
       })
-      .then(function (data) {
+      .then(data => {
         if (data.ok) {
-          resultado.innerHTML = '<div class="alert alert-success">✅ Equipo encontrado. Redirigiendo…</div>';
-          var url = esRack
+          resultado.innerHTML = '<div class="alert alert-success border-0 small text-center"><i class="bi bi-check-circle-fill me-2"></i>Equipo verificado. Accediendo...</div>';
+          const url = esRack
             ? URLS.ficha_rack.replace('999999', data.id)
             : URLS.ficha_planta.replace('999999', data.id);
           window.location.href = url;
         } else {
-          var errorMsg = (data.error || 'Error desconocido') + ' | JSON crudo: ' + JSON.stringify(data);
-          resultado.innerHTML = '<div class="alert alert-danger">❌ ' + errorMsg +
-            '<br><small>Código enviado: <code>' + idQr + '</code></small></div>';
-          procesando = false;
-          btnContinuar.disabled = false;
+          throw new Error(data.error || 'Equipo no encontrado.');
         }
       })
-      .catch(function (err) {
-        console.error('Error equipo:', err);
-        resultado.innerHTML = '<div class="alert alert-danger">❌ Error de conexión/servidor:<br><small>' + err.message + '</small></div>';
+      .catch(err => {
+        resultado.innerHTML = '<div class="alert alert-danger border-0 small text-center"><i class="bi bi-exclamation-triangle-fill me-2"></i>' + err.message + '</div>';
         procesando = false;
         btnContinuar.disabled = false;
       });
   }
- 
+
   btnContinuar.addEventListener('click', function () {
-    buscarEquipo(selectEquipo.value);
+    const idQr = esRack ? selectRack.value : selectPlanta.value;
+    if (!idQr) {
+      resultado.innerHTML = '<div class="alert alert-secondary border-0 small text-center"><i class="bi bi-info-circle me-2"></i>Seleccione un equipo del listado para continuar.</div>';
+      return;
+    }
+    buscarEquipo(idQr);
   });
 })();
 </script>
