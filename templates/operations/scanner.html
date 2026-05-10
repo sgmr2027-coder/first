@@ -157,7 +157,7 @@
             : URLS.ficha_planta.replace('999999', data.id);
           window.location.href = url;
         } else {
-          var errorMsg = data.error || 'Error desconocido en servidor.';
+          var errorMsg = (data.error || 'Error desconocido') + ' | JSON crudo: ' + JSON.stringify(data);
           resultado.innerHTML = '<div class="alert alert-danger">❌ ' + errorMsg +
             '<br><small>Código enviado: <code>' + idQr + '</code></small></div>';
           procesando = false;
