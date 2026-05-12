@@ -359,6 +359,8 @@ class IntervencionPDFView(View):
                 'modelo': detalle.modelo if detalle else '—',
                 'serie': detalle.serie if detalle else '—',
                 'corriente': datos.get(f'corriente_compresor_{i}', '—'),
+                'corriente 2': datos.get(f'corriente1_compresor_{i}', '—'),
+                'corriente 3': datos.get(f'corriente2_compresor_{i}', '—'),
                 'estado_aceite': datos.get(f'estado_aceite_{i}', '—'),
                 'nivel_aceite': datos.get(f'nivel_aceite_{i}', '—'),
                 'ruido': datos.get(f'ruido_{i}', '—'),
