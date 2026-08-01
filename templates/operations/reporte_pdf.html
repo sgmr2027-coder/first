@@ -311,15 +311,17 @@
         <thead>
             <tr>
                 <th style="width: 4%;">N°</th>
-                <th style="width: 22%; text-align: left;">Modelo</th>
-                <th style="width: 20%;">Serie</th>
-                <th style="width: 8%;">Corriente</th>
-                <th style="width: 8%;">Aceite</th>
-                <th style="width: 8%;">Nivel</th>
-                <th style="width: 8%;">Ruido</th>
-                <th style="width: 8%;">Dispara por Aceite</th>
-                <th style="width: 8%;">Dispara por Presión</th>
-                <th style="width: 6%;">Traxoil</th>
+                <th style="width: 20%; text-align: left;">Modelo</th>
+                <th style="width: 16%;">Serie</th>
+                <th style="width: 6%;">Amp 1</th>
+                <th style="width: 6%;">Amp 2</th>
+                <th style="width: 6%;">Amp 3</th>
+                <th style="width: 7%;">Aceite</th>
+                <th style="width: 6%;">Nivel</th>
+                <th style="width: 6%;">Ruido</th>
+                <th style="width: 7%;">Dispara por Aceite</th>
+                <th style="width: 7%;">Dispara por Presión</th>
+                <th style="width: 5%;">Traxoil</th>
             </tr>
         </thead>
         <tbody>
@@ -328,7 +330,9 @@
                 <td style="text-align:center;"><span class="c-badge media-badge">{{ c.numero }}</span></td>
                 <td class="td-modelo">{{ c.modelo }}</td>
                 <td class="td-serie">{{ c.serie }}</td>
-                <td class="td-bold">{{ c.corriente }}</td>
+                <td class="td-bold">{{ c.corriente_1 }}</td>
+                <td class="td-bold">{{ c.corriente_2 }}</td>
+                <td class="td-bold">{{ c.corriente_3 }}</td>
                 <td>{{ c.estado_aceite|upper }}</td>
                 <td>{{ c.nivel_aceite|upper }}</td>
                 <td>{{ c.ruido|upper }}</td>
@@ -338,7 +342,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="10" style="padding:8px; color:#6B7DA0; text-align:center;">No aplica / No hay compresores
+                <td colspan="12" style="padding:8px; color:#6B7DA0; text-align:center;">No aplica / No hay compresores
                     de Media</td>
             </tr>
             {% endfor %}
@@ -351,15 +355,17 @@
         <thead>
             <tr>
                 <th style="width: 4%;">N°</th>
-                <th style="width: 22%; text-align: left;">Modelo</th>
-                <th style="width: 20%;">Serie</th>
-                <th style="width: 8%;">Corriente</th>
-                <th style="width: 8%;">Aceite</th>
-                <th style="width: 8%;">Nivel</th>
-                <th style="width: 8%;">Ruido</th>
-                <th style="width: 8%;">D. Aceite</th>
-                <th style="width: 8%;">D. Pres</th>
-                <th style="width: 6%;">Traxoil</th>
+                <th style="width: 20%; text-align: left;">Modelo</th>
+                <th style="width: 16%;">Serie</th>
+                <th style="width: 6%;">Amp 1</th>
+                <th style="width: 6%;">Amp 2</th>
+                <th style="width: 6%;">Amp 3</th>
+                <th style="width: 7%;">Aceite</th>
+                <th style="width: 6%;">Nivel</th>
+                <th style="width: 6%;">Ruido</th>
+                <th style="width: 7%;">D. Aceite</th>
+                <th style="width: 7%;">D. Pres</th>
+                <th style="width: 5%;">Traxoil</th>
             </tr>
         </thead>
         <tbody>
@@ -368,7 +374,9 @@
                 <td style="text-align:center;"><span class="c-badge baja-badge">{{ c.numero }}</span></td>
                 <td class="td-modelo">{{ c.modelo }}</td>
                 <td class="td-serie">{{ c.serie }}</td>
-                <td class="td-bold">{{ c.corriente }}</td>
+                <td class="td-bold">{{ c.corriente_1 }}</td>
+                <td class="td-bold">{{ c.corriente_2 }}</td>
+                <td class="td-bold">{{ c.corriente_3 }}</td>
                 <td>{{ c.estado_aceite|upper }}</td>
                 <td>{{ c.nivel_aceite|upper }}</td>
                 <td>{{ c.ruido|upper }}</td>
@@ -378,7 +386,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="10" style="padding:8px; color:#6B7DA0; text-align:center;">No aplica / No hay compresores
+                <td colspan="12" style="padding:8px; color:#6B7DA0; text-align:center;">No aplica / No hay compresores
                     de Baja</td>
             </tr>
             {% endfor %}
