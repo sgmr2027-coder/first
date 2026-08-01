@@ -13,7 +13,7 @@ from xhtml2pdf import pisa
 import io
 import os
  
-from inventory.models import Rack, PlantaElectrica, RegistroPlanta
+from inventory.models import Rack, PlantaElectrica, RegistroPlanta, Tienda
 from .models import RegistroActividad, TipoActividad
 from .services import (
     tecnico_tiene_tarea_abierta,
@@ -33,10 +33,15 @@ class ScannerView(TecnicoRequiredMixin, View):
     """Pantalla principal: elige tipo de equipo (Rack o Planta) y luego el equipo."""
     def get(self, request):
         tarea_abierta = obtener_tarea_abierta(request.user)
+        racks_qs = Rack.objects.filter(activo=True).select_related('tienda').order_by('tienda__nombre', 'ubicacion')
+        plantas_qs = PlantaElectrica.objects.filter(activo=True).select_related('tienda').order_by('tienda__nombre', 'ubicacion')
         return render(request, 'operations/scanner.html', {
             'tarea_abierta': tarea_abierta,
-            'racks': Rack.objects.filter(activo=True).select_related('tienda').order_by('tienda__nombre', 'ubicacion'),
-            'plantas': PlantaElectrica.objects.filter(activo=True).select_related('tienda').order_by('tienda__nombre', 'ubicacion'),
+            'tiendas': Tienda.objects.all(),
+            'racks': racks_qs,
+            'plantas': plantas_qs,
+            'racks_data': list(racks_qs.values('id_qr', 'tienda__nombre', 'ubicacion')),
+            'plantas_data': list(plantas_qs.values('id_qr', 'tienda__nombre', 'ubicacion')),
         })
  
  
