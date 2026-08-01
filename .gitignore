@@ -8,4 +8,5 @@ staticfiles/
 *.log
 .idea/
 .vscode/
+.worktrees/
 first/
