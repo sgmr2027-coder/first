@@ -64,13 +64,15 @@ class MisIntervencionesView(TecnicoRequiredMixin, View):
         racks = RegistroActividad.objects.filter(
             tecnico=request.user,
             cerrado=True,
-            hora_fin__range=(inicio_mes, mes_siguiente),
+            hora_fin__gte=inicio_mes,
+            hora_fin__lt=mes_siguiente,
         ).select_related('rack__tienda')
 
         plantas = RegistroPlanta.objects.filter(
             tecnico=request.user,
             cerrado=True,
-            hora_fin__range=(inicio_mes, mes_siguiente),
+            hora_fin__gte=inicio_mes,
+            hora_fin__lt=mes_siguiente,
         ).select_related('planta__tienda')
 
         intervenciones = []

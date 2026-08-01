@@ -143,22 +143,22 @@ class MisIntervencionesViewTest(TestCase):
         inicio_mes = ahora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         return inicio_mes + timedelta(days=dia - 1, hours=12)
 
-    def _registro_rack(self, cerrado=True, dia_mes=5):
-        fin = self._fin_dentro_del_mes(dia_mes)
+    def _registro_rack(self, cerrado=True, dia_mes=5, tecnico=None, fin=None):
+        fin = fin or self._fin_dentro_del_mes(dia_mes)
         return RegistroActividad.objects.create(
             rack=self.rack,
-            tecnico=self.tecnico,
+            tecnico=tecnico or self.tecnico,
             tipo_actividad=TipoActividad.PREVENTIVO,
             hora_inicio=fin,
             hora_fin=fin if cerrado else None,
             cerrado=cerrado,
         )
 
-    def _registro_planta(self, cerrado=True, dia_mes=3):
-        fin = self._fin_dentro_del_mes(dia_mes)
+    def _registro_planta(self, cerrado=True, dia_mes=3, tecnico=None, fin=None):
+        fin = fin or self._fin_dentro_del_mes(dia_mes)
         registro = RegistroPlanta.objects.create(
             planta=self.planta,
-            tecnico=self.tecnico,
+            tecnico=tecnico or self.tecnico,
             fecha=fin.date(),
             cerrado=cerrado,
         )
@@ -191,6 +191,36 @@ class MisIntervencionesViewTest(TestCase):
 
     def test_excluye_abiertas(self):
         self._registro_rack(cerrado=False, dia_mes=5)
+        self.client.login(username='tecnico1', password='testpass123')
+        resp = self.client.get(reverse('operations:mis_intervenciones'))
+        self.assertEqual(resp.context['intervenciones'], [])
+
+    def test_sin_intervenciones_lista_vacia(self):
+        self.client.login(username='tecnico1', password='testpass123')
+        resp = self.client.get(reverse('operations:mis_intervenciones'))
+        self.assertEqual(resp.context['intervenciones'], [])
+
+    def test_excluye_mes_anterior(self):
+        inicio_mes = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        self._registro_rack(cerrado=True, fin=inicio_mes - timedelta(days=1))
+        self._registro_planta(cerrado=True, fin=inicio_mes - timedelta(days=1))
+        self.client.login(username='tecnico1', password='testpass123')
+        resp = self.client.get(reverse('operations:mis_intervenciones'))
+        self.assertEqual(resp.context['intervenciones'], [])
+
+    def test_excluye_frontera_mes_siguiente(self):
+        inicio_mes = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        mes_siguiente = (inicio_mes + timedelta(days=32)).replace(day=1)
+        self._registro_rack(cerrado=True, fin=mes_siguiente)
+        self.client.login(username='tecnico1', password='testpass123')
+        resp = self.client.get(reverse('operations:mis_intervenciones'))
+        self.assertEqual(resp.context['intervenciones'], [])
+
+    def test_solo_tecnicos_del_mismo_usuario(self):
+        otro_tecnico = get_user_model().objects.create_user(
+            username='tecnico2', password='testpass123', rol=Rol.TECNICO
+        )
+        self._registro_rack(cerrado=True, dia_mes=5, tecnico=otro_tecnico)
         self.client.login(username='tecnico1', password='testpass123')
         resp = self.client.get(reverse('operations:mis_intervenciones'))
         self.assertEqual(resp.context['intervenciones'], [])

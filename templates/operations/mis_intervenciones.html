@@ -29,7 +29,7 @@
               <td class="px-3 py-3">
                 {% if item.tipo == 'Rack' %}
                 <span class="badge text-bg-primary"><i class="bi bi-cpu me-1"></i>Rack</span>
-                {% else %}
+                {% elif item.tipo == 'Planta' %}
                 <span class="badge text-bg-warning"><i class="bi bi-lightning-charge me-1"></i>Planta</span>
                 {% endif %}
               </td>
