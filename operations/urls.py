@@ -6,6 +6,9 @@ app_name = 'operations'
 urlpatterns = [
     # ── Scanner unificado ─────────────────────────────────────────────────────
     path('scanner/', views.ScannerView.as_view(), name='scanner'),
+
+    # ── Mis intervenciones ───────────────────────────────────────────────────
+    path('mis-intervenciones/', views.MisIntervencionesView.as_view(), name='mis_intervenciones'),
  
     # ── Rack — flujo completo ─────────────────────────────────────────────────
     path('rack/<int:rack_id>/',              views.FichaTecnicaView.as_view(),   name='ficha'),

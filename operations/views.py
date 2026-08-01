@@ -12,6 +12,7 @@ from django.contrib.auth.decorators import login_required
 from xhtml2pdf import pisa
 import io
 import os
+from datetime import timedelta
  
 from inventory.models import Rack, PlantaElectrica, RegistroPlanta, Tienda
 from .models import RegistroActividad, TipoActividad
@@ -49,6 +50,49 @@ class ScannerView(TecnicoRequiredMixin, View):
 # RACK — Ficha e inicio de actividad
 # ─────────────────────────────────────────────────────────────────────────────
  
+# ─────────────────────────────────────────────────────────────────────────────
+# MIS INTERVENCIONES — Listado de tiendas del mes
+# ─────────────────────────────────────────────────────────────────────────────
+
+class MisIntervencionesView(TecnicoRequiredMixin, View):
+    """Listado de tiendas intervenidas por el técnico en el mes actual."""
+    def get(self, request):
+        ahora = timezone.now()
+        inicio_mes = ahora.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        mes_siguiente = (inicio_mes + timedelta(days=32)).replace(day=1)
+
+        racks = RegistroActividad.objects.filter(
+            tecnico=request.user,
+            cerrado=True,
+            hora_fin__range=(inicio_mes, mes_siguiente),
+        ).select_related('rack__tienda')
+
+        plantas = RegistroPlanta.objects.filter(
+            tecnico=request.user,
+            cerrado=True,
+            hora_fin__range=(inicio_mes, mes_siguiente),
+        ).select_related('planta__tienda')
+
+        intervenciones = []
+        for r in racks:
+            intervenciones.append({
+                'tienda': r.rack.tienda.nombre,
+                'tipo': 'Rack',
+                'fecha': r.hora_fin,
+            })
+        for p in plantas:
+            intervenciones.append({
+                'tienda': p.planta.tienda.nombre,
+                'tipo': 'Planta',
+                'fecha': p.hora_fin,
+            })
+        intervenciones.sort(key=lambda x: x['fecha'], reverse=True)
+
+        return render(request, 'operations/mis_intervenciones.html', {
+            'intervenciones': intervenciones,
+        })
+
+
 class FichaTecnicaView(TecnicoRequiredMixin, View):
     """Ficha del rack + botones Preventivo / Correctivo / Emergencia."""
     def get(self, request, rack_id):
