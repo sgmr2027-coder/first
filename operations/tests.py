@@ -43,3 +43,15 @@ class ScannerViewTest(TestCase):
             resp.context['plantas_data'],
             [{'id_qr': 'PLANTA-001', 'tienda__nombre': 'Tienda A', 'ubicacion': ''}],
         )
+
+    def test_scanner_html_incluye_dropdowns_y_datos_json(self):
+        self.client.login(username='tecnico1', password='testpass123')
+        resp = self.client.get(reverse('operations:scanner'))
+        html = resp.content.decode()
+        self.assertIn('id="select_tienda"', html)
+        self.assertIn('id="select_equipo"', html)
+        self.assertIn('id="sin_equipos"', html)
+        self.assertIn('id="racks-data"', html)
+        self.assertIn('id="plantas-data"', html)
+        self.assertIn('"RACK-001"', html)
+        self.assertIn('Tienda B', html)

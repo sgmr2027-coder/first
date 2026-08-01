@@ -39,24 +39,24 @@
           </div>
         </div>
 
-        <div id="container_rack">
-          <label class="form-label text-muted small fw-bold">SELECCIONAR RACK</label>
-          <select class="form-select form-select-lg mb-4" id="select_rack">
-            <option value="">— Seleccionar —</option>
-            {% for rack in racks %}
-              <option value="{{ rack.id_qr }}">{{ rack.tienda.nombre }} — {{ rack.ubicacion|default:"Rack" }} ({{ rack.id_qr }})</option>
+        <div class="mb-4">
+          <label class="form-label text-muted small fw-bold" for="select_tienda">TIENDA</label>
+          <select class="form-select form-select-lg" id="select_tienda">
+            <option value="">— Seleccionar tienda —</option>
+            {% for tienda in tiendas %}
+              <option value="{{ tienda.nombre }}">{{ tienda.nombre }}</option>
             {% endfor %}
           </select>
         </div>
 
-        <div id="container_planta" class="d-none">
-          <label class="form-label text-muted small fw-bold">SELECCIONAR PLANTA</label>
-          <select class="form-select form-select-lg mb-4" id="select_planta">
+        <div class="mb-4">
+          <label class="form-label text-muted small fw-bold" for="select_equipo">EQUIPO</label>
+          <select class="form-select form-select-lg" id="select_equipo" disabled>
             <option value="">— Seleccionar —</option>
-            {% for p in plantas %}
-              <option value="{{ p.id_qr }}">{{ p.tienda.nombre }} — {{ p.ubicacion|default:"Planta" }} ({{ p.id_qr }})</option>
-            {% endfor %}
           </select>
+          <div id="sin_equipos" class="d-none text-center text-muted small mt-2">
+            <i class="bi bi-info-circle me-1"></i>Sin equipos activos
+          </div>
         </div>
 
         <button id="btn_continuar" class="btn btn-primary btn-lg w-100 py-3 fw-bold shadow-sm mt-2 text-uppercase">
@@ -68,6 +68,9 @@
     </div>
   </div>
 </div>
+
+{{ racks_data|json_script:"racks-data" }}
+{{ plantas_data|json_script:"plantas-data" }}
 {% endblock %}
 
 {% block extra_js %}
@@ -80,31 +83,43 @@
     "ficha_planta": "{% url 'operations:ficha_planta' planta_id=999999 %}"
   };
 
+  const racksData   = JSON.parse(document.getElementById('racks-data').textContent);
+  const plantasData = JSON.parse(document.getElementById('plantas-data').textContent);
+
   const btnRack      = document.getElementById('btn_rack');
   const btnPlanta    = document.getElementById('btn_planta');
-  const contRack     = document.getElementById('container_rack');
-  const contPlanta   = document.getElementById('container_planta');
-  const selectRack   = document.getElementById('select_rack');
-  const selectPlanta = document.getElementById('select_planta');
+  const selectTienda = document.getElementById('select_tienda');
+  const selectEquipo = document.getElementById('select_equipo');
+  const sinEquipos   = document.getElementById('sin_equipos');
   const btnContinuar = document.getElementById('btn_continuar');
   const resultado    = document.getElementById('resultado');
 
   let esRack = true;
   let procesando = false;
 
-  btnRack.addEventListener('change', function() {
-    esRack = true;
-    contRack.classList.remove('d-none');
-    contPlanta.classList.add('d-none');
-    resultado.innerHTML = '';
-  });
+  function poblarEquipos() {
+    const tienda = selectTienda.value;
+    const fuente = esRack ? racksData : plantasData;
+    const filtrados = tienda ? fuente.filter(function (e) { return e.tienda__nombre === tienda; }) : [];
 
-  btnPlanta.addEventListener('change', function() {
-    esRack = false;
-    contRack.classList.add('d-none');
-    contPlanta.classList.remove('d-none');
+    selectEquipo.innerHTML = '<option value="">— Seleccionar —</option>';
+    filtrados.forEach(function (e) {
+      const opt = document.createElement('option');
+      opt.value = e.id_qr;
+      opt.textContent = (e.ubicacion ? e.ubicacion + ' — ' : '') + e.id_qr;
+      selectEquipo.appendChild(opt);
+    });
+
+    selectEquipo.disabled = !tienda;
+    sinEquipos.classList.toggle('d-none', filtrados.length > 0);
     resultado.innerHTML = '';
-  });
+  }
+
+  btnRack.addEventListener('change', function () { esRack = true; poblarEquipos(); });
+  btnPlanta.addEventListener('change', function () { esRack = false; poblarEquipos(); });
+  selectTienda.addEventListener('change', poblarEquipos);
+
+  poblarEquipos();
 
   function buscarEquipo(idQr) {
     if (!idQr || procesando) return;
@@ -143,7 +158,7 @@
   }
 
   btnContinuar.addEventListener('click', function () {
-    const idQr = esRack ? selectRack.value : selectPlanta.value;
+    const idQr = selectEquipo.value;
     if (!idQr) {
       resultado.innerHTML = '<div class="alert alert-secondary border-0 small text-center"><i class="bi bi-info-circle me-2"></i>Seleccione un equipo del listado para continuar.</div>';
       return;
