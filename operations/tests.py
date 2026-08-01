@@ -4,6 +4,7 @@ from django.urls import reverse
 
 from inventory.models import PlantaElectrica, Rack, Tienda
 from users.models import Rol
+from operations.forms import ParametrosEntradaForm, ParametrosSalidaForm
 
 
 class ScannerViewTest(TestCase):
@@ -55,3 +56,50 @@ class ScannerViewTest(TestCase):
         self.assertIn('id="plantas-data"', html)
         self.assertIn('"RACK-001"', html)
         self.assertIn('Tienda B', html)
+
+
+class CorrienteCompresorFormsTest(TestCase):
+    def setUp(self):
+        tienda = Tienda.objects.create(nombre='Tienda A', codigo='A')
+        self.rack = Rack.objects.create(
+            id_qr='RACK-001', tienda=tienda,
+            compresores_media=1, compresores_baja=1, activo=True,
+        )
+
+    def test_entrada_genera_3_campos_por_compresor(self):
+        form = ParametrosEntradaForm(rack=self.rack)
+        self.assertIn('corriente1_compresor_1', form.fields)
+        self.assertIn('corriente2_compresor_1', form.fields)
+        self.assertIn('corriente3_compresor_1', form.fields)
+        self.assertIn('corriente1_compresor_2', form.fields)
+        self.assertIn('corriente2_compresor_2', form.fields)
+        self.assertIn('corriente3_compresor_2', form.fields)
+
+    def test_salida_genera_3_campos_por_compresor(self):
+        form = ParametrosSalidaForm(rack=self.rack)
+        self.assertIn('corriente1_compresor_1', form.fields)
+        self.assertIn('corriente2_compresor_1', form.fields)
+        self.assertIn('corriente3_compresor_1', form.fields)
+
+    def test_entrada_get_compresores_expone_3_corrientes(self):
+        form = ParametrosEntradaForm(rack=self.rack)
+        grupos = form.get_compresores()
+        c1 = grupos['media'][0]
+        self.assertIn('corriente_1', c1)
+        self.assertIn('corriente_2', c1)
+        self.assertIn('corriente_3', c1)
+
+    def test_salida_get_compresores_expone_3_corrientes(self):
+        form = ParametrosSalidaForm(rack=self.rack)
+        grupos = form.get_compresores()
+        c2 = grupos['baja'][0]
+        self.assertIn('corriente_1', c2)
+        self.assertIn('corriente_2', c2)
+        self.assertIn('corriente_3', c2)
+
+    def test_etiquetas_amp_por_fase(self):
+        form = ParametrosEntradaForm(rack=self.rack)
+        self.assertEqual(form.fields['corriente1_compresor_1'].label, 'Amp 1 (media)')
+        self.assertEqual(form.fields['corriente2_compresor_1'].label, 'Amp 2 (media)')
+        self.assertEqual(form.fields['corriente3_compresor_1'].label, 'Amp 3 (media)')
+        self.assertEqual(form.fields['corriente1_compresor_2'].label, 'Amp 1 (baja)')

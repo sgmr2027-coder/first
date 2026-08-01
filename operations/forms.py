@@ -24,22 +24,25 @@ CHOICES_VENTILADORES = [
 CHOICES_CONDICIONES = [('bueno', 'Buenas condiciones'), ('malo', 'Malas condiciones')]
 
 
-def _corriente_field(numero, etiqueta_extra=''):
-    """Campo de corriente (A) para un compresor."""
-    label = f'Corriente {numero} {etiqueta_extra}'
-    return forms.DecimalField(
-        label=label,
-        required=False,
-        min_value=0,
-        max_digits=6,
-        decimal_places=2,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-control', 
-            'step': '0.01', 
-            'placeholder': 'A',
-            'data-label': label
-        })
-    )
+def _corriente_fields(numero, etiqueta_extra=''):
+    """3 campos de corriente (Amp 1/2/3) para un compresor trifásico."""
+    fields = {}
+    for fase in (1, 2, 3):
+        label = f'Amp {fase} {etiqueta_extra}'.strip()
+        fields[f'corriente{fase}_compresor_{numero}'] = forms.DecimalField(
+            label=label,
+            required=False,
+            min_value=0,
+            max_digits=6,
+            decimal_places=2,
+            widget=forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'placeholder': 'A',
+                'data-label': label,
+            })
+        )
+    return fields
 
 
 def _choice_field(label, choices):
@@ -70,7 +73,7 @@ class ParametrosEntradaForm(forms.Form):
             media = rack.compresores_media or 0
             for i in range(1, n + 1):
                 etiqueta = '(media)' if i <= media else '(baja)'
-                self.fields[f'corriente_compresor_{i}'] = _corriente_field(i, etiqueta)
+                self.fields.update(_corriente_fields(i, etiqueta))
 
     def to_json(self):
         from decimal import Decimal
@@ -98,7 +101,9 @@ class ParametrosEntradaForm(forms.Form):
             temp_key = 'media' if i <= media_count else 'baja'
             groups[temp_key].append({
                 'numero': i,
-                'corriente': self.get(f'corriente_compresor_{i}'),
+                'corriente_1': self.get(f'corriente1_compresor_{i}'),
+                'corriente_2': self.get(f'corriente2_compresor_{i}'),
+                'corriente_3': self.get(f'corriente3_compresor_{i}'),
             })
         return groups
     
@@ -134,7 +139,7 @@ class ParametrosSalidaForm(forms.Form):
             media = rack.compresores_media or 0
             for i in range(1, n + 1):
                 etiqueta = '(media)' if i <= media else '(baja)'
-                self.fields[f'corriente_compresor_{i}'] = _corriente_field(i, etiqueta)
+                self.fields.update(_corriente_fields(i, etiqueta))
                 self.fields[f'estado_aceite_{i}'] = _choice_field(f'Aceite C{i}', CHOICES_ACEITE_ESTADO)
                 self.fields[f'nivel_aceite_{i}'] = _choice_field(f'Nivel C{i}', CHOICES_ACEITE_NIVEL)
                 self.fields[f'ruido_{i}'] = _choice_field(f'Ruido C{i}', CHOICES_RUIDO)
@@ -161,7 +166,9 @@ class ParametrosSalidaForm(forms.Form):
             temp_key = 'media' if i <= media_count else 'baja'
             groups[temp_key].append({
                 'numero': i,
-                'corriente': self[f'corriente_compresor_{i}'],
+                'corriente_1': self[f'corriente1_compresor_{i}'],
+                'corriente_2': self[f'corriente2_compresor_{i}'],
+                'corriente_3': self[f'corriente3_compresor_{i}'],
                 'estado_aceite': self[f'estado_aceite_{i}'],
                 'nivel_aceite': self[f'nivel_aceite_{i}'],
                 'ruido': self[f'ruido_{i}'],
