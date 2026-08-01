@@ -341,8 +341,20 @@ def link_callback(uri, rel):
         return path
     
     return uri
- 
- 
+
+
+def _corriente_por_fase(datos, i):
+    """Devuelve (corriente_1, corriente_2, corriente_3) de un compresor con fallback histórico."""
+    c1 = datos.get(f'corriente1_compresor_{i}')
+    if c1 is None:
+        c1 = datos.get(f'corriente_compresor_{i}')
+    return (
+        c1 if c1 is not None else '—',
+        datos.get(f'corriente2_compresor_{i}', '—'),
+        datos.get(f'corriente3_compresor_{i}', '—'),
+    )
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # PDF — Rack
 # ─────────────────────────────────────────────────────────────────────────────
@@ -359,13 +371,14 @@ class IntervencionPDFView(View):
  
         for i in range(1, rack.total_compresores + 1):
             detalle = detalles_map.get(i)
+            corriente_1, corriente_2, corriente_3 = _corriente_por_fase(datos, i)
             comp_data = {
                 'numero': i,
                 'modelo': detalle.modelo if detalle else '—',
                 'serie': detalle.serie if detalle else '—',
-                'corriente_1': datos.get(f'corriente1_compresor_{i}', '—'),
-                'corriente_2': datos.get(f'corriente2_compresor_{i}', '—'),
-                'corriente_3': datos.get(f'corriente3_compresor_{i}', '—'),
+                'corriente_1': corriente_1,
+                'corriente_2': corriente_2,
+                'corriente_3': corriente_3,
                 'estado_aceite': datos.get(f'estado_aceite_{i}', '—'),
                 'nivel_aceite': datos.get(f'nivel_aceite_{i}', '—'),
                 'ruido': datos.get(f'ruido_{i}', '—'),

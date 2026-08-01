@@ -5,6 +5,7 @@ from django.urls import reverse
 from inventory.models import PlantaElectrica, Rack, Tienda
 from users.models import Rol
 from operations.forms import ParametrosEntradaForm, ParametrosSalidaForm
+from operations.views import _corriente_por_fase
 
 
 class ScannerViewTest(TestCase):
@@ -103,3 +104,22 @@ class CorrienteCompresorFormsTest(TestCase):
         self.assertEqual(form.fields['corriente2_compresor_1'].label, 'Amp 2 (media)')
         self.assertEqual(form.fields['corriente3_compresor_1'].label, 'Amp 3 (media)')
         self.assertEqual(form.fields['corriente1_compresor_2'].label, 'Amp 1 (baja)')
+
+    def test_corriente_por_fase_con_3_fases(self):
+        datos = {
+            'corriente1_compresor_1': '5.5',
+            'corriente2_compresor_1': '5.6',
+            'corriente3_compresor_1': '5.7',
+        }
+        self.assertEqual(_corriente_por_fase(datos, 1), ('5.5', '5.6', '5.7'))
+
+    def test_corriente_por_fase_fallback_historico(self):
+        datos = {'corriente_compresor_1': '5.5'}
+        self.assertEqual(_corriente_por_fase(datos, 1), ('5.5', '—', '—'))
+
+    def test_corriente_por_fase_ausente(self):
+        self.assertEqual(_corriente_por_fase({}, 3), ('—', '—', '—'))
+
+    def test_corriente_por_fase_no_cae_con_valor_cero(self):
+        datos = {'corriente1_compresor_1': 0.0, 'corriente_compresor_1': '5.5'}
+        self.assertEqual(_corriente_por_fase(datos, 1), (0.0, '—', '—'))
