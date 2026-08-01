@@ -1,6 +1,6 @@
 # Fix RegistroPlanta Guardado Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Corregir `RegistroPlanta.marcar_cerrado()` para que persista todos los parámetros de la revisión de planta, no solo `cerrado` y `hora_fin`.
 
@@ -30,7 +30,7 @@
 - Produces: `config/test_settings.py` (settings module para `manage.py test --settings=config.test_settings`); `inventory/tests.py` con `RegistroPlantaMarcarCerradoTest`.
 - Consumes: modelos existentes `Tienda`, `PlantaElectrica`, `RegistroPlanta` (inventory/models.py), `get_user_model()` (users/models.py).
 
-- [ ] **Step 1: Crear `config/test_settings.py`**
+- [x] **Step 1: Crear `config/test_settings.py`**
 
 ```python
 from config.settings import *  # noqa: F401,F403
@@ -43,7 +43,7 @@ DATABASES = {
 }
 ```
 
-- [ ] **Step 2: Crear `inventory/tests.py` con el test que falla**
+- [x] **Step 2: Crear `inventory/tests.py` con el test que falla**
 
 ```python
 from decimal import Decimal
@@ -89,7 +89,7 @@ class RegistroPlantaMarcarCerradoTest(TestCase):
         self.assertEqual(recargado.observaciones, 'Prueba persistencia')
 ```
 
-- [ ] **Step 3: Ejecutar el test para verificar que FALLA**
+- [x] **Step 3: Ejecutar el test para verificar que FALLA**
 
 Run:
 ```bash
@@ -97,7 +97,7 @@ Run:
 ```
 Expected: FAIL. El test runner arranca, migra a SQLite, y falla en la primera `assertEqual(recargado.bateria_cantidad, 2)` porque `marcar_cerrado()` solo persiste `cerrado`/`hora_fin` (el resto queda `None` al re-leer de BD).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add config/test_settings.py inventory/tests.py
@@ -116,7 +116,7 @@ git commit -m "test: add failing test for RegistroPlanta.marcar_cerrado persiste
 - Consumes: test `test_marcar_cerrado_persiste_todos_los_parametros` de Task 1.
 - Produces: `RegistroPlanta.marcar_cerrado()` con firma idéntica (`self.cerrado = True; self.save()`), sin romper `hora_fin` (se sigue asignando en la vista antes de llamar).
 
-- [ ] **Step 1: Cambiar `marcar_cerrado` en `inventory/models.py:180-182`**
+- [x] **Step 1: Cambiar `marcar_cerrado` en `inventory/models.py:180-182`**
 
 Antes:
 ```python
@@ -132,7 +132,7 @@ Después:
         self.save()
 ```
 
-- [ ] **Step 2: Ejecutar el test para verificar que PASA**
+- [x] **Step 2: Ejecutar el test para verificar que PASA**
 
 Run:
 ```bash
@@ -140,7 +140,7 @@ Run:
 ```
 Expected: PASS (1 test).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add inventory/models.py
@@ -157,7 +157,7 @@ git commit -m "fix: persist all RegistroPlanta fields on marcar_cerrado"
 **Interfaces:**
 - Consumes: settings de test de Task 1, fix de Task 2.
 
-- [ ] **Step 1: Correr el suite completo de tests con SQLite**
+- [x] **Step 1: Correr el suite completo de tests con SQLite**
 
 Run:
 ```bash
@@ -165,7 +165,7 @@ Run:
 ```
 Expected: OK, 1 test ejecutado, 0 fallos. (Confirma que las apps `users`, `inventory`, `operations`, `analytics` migran y arrancan bien en SQLite.)
 
-- [ ] **Step 2: Confirmar que no se requiere migración de datos**
+- [x] **Step 2: Confirmar que no se requiere migración de datos**
 
 Run:
 ```bash
@@ -173,7 +173,7 @@ Run:
 ```
 Expected: `No changes detected` (el fix no altera el esquema).
 
-- [ ] **Step 3: Actualizar estado del plan y commit final**
+- [x] **Step 3: Actualizar estado del plan y commit final**
 
 Marcar los 2 primeros tasks como completados en este documento si aún no lo están, y:
 
