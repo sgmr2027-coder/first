@@ -3,14 +3,14 @@ from datetime import datetime
 from io import StringIO
 from itertools import chain
 
-from django.db.models import Avg, F, ExpressionWrapper, DurationField
+from django.db.models import Avg, F, ExpressionWrapper, DurationField, Count, Q
 from django.http import HttpResponse
 from django.utils import timezone
 from django.views.generic import TemplateView, View
 
 from users.mixins import SupervisorRequiredMixin
-from inventory.models import Tienda, Rack, PlantaElectrica, RegistroPlanta
-from operations.models import RegistroActividad
+from inventory.models import Tienda, Rack, PlantaElectrica, RegistroPlanta, Zona, AsignacionTecnico, Especialidad
+from operations.models import RegistroActividad, TipoActividad
 
 
 def _get_cerrados_merged(request):
@@ -63,6 +63,142 @@ def _get_cerrados_merged(request):
         reverse=True
     )
     return merged
+
+
+def _pct(subset, total):
+    """% de tiendas en `total` que están también en `subset`."""
+    total = total or set()
+    if not total:
+        return None
+    return round(len(subset & total) / len(total) * 100, 1)
+
+
+def _calcular_cobertura_preventivos(fecha_inicio, fecha_fin, tienda_id=None):
+    """
+    Calcula el % de puntos de venta (Tiendas) con preventivo realizado,
+    separado en Racks y Plantas, en total, por zona y por técnico
+    (según las asignaciones definidas en AsignacionTecnico).
+    """
+    # Universo de tiendas que SÍ tienen el activo instalado (racks/plantas activos)
+    racks_activos_qs = Rack.objects.filter(activo=True)
+    plantas_activas_qs = PlantaElectrica.objects.filter(activo=True)
+    if tienda_id:
+        racks_activos_qs = racks_activos_qs.filter(tienda_id=tienda_id)
+        plantas_activas_qs = plantas_activas_qs.filter(tienda_id=tienda_id)
+
+    tiendas_con_racks = set(racks_activos_qs.values_list('tienda_id', flat=True))
+    tiendas_con_plantas = set(plantas_activas_qs.values_list('tienda_id', flat=True))
+
+    # Preventivos realizados en el rango de fechas
+    prev_racks_qs = RegistroActividad.objects.filter(tipo_actividad=TipoActividad.PREVENTIVO)
+    prev_plantas_qs = RegistroPlanta.objects.all()
+    if fecha_inicio:
+        prev_racks_qs = prev_racks_qs.filter(hora_inicio__date__gte=fecha_inicio)
+        prev_plantas_qs = prev_plantas_qs.filter(hora_inicio__date__gte=fecha_inicio)
+    if fecha_fin:
+        prev_racks_qs = prev_racks_qs.filter(hora_inicio__date__lte=fecha_fin)
+        prev_plantas_qs = prev_plantas_qs.filter(hora_inicio__date__lte=fecha_fin)
+    if tienda_id:
+        prev_racks_qs = prev_racks_qs.filter(rack__tienda_id=tienda_id)
+        prev_plantas_qs = prev_plantas_qs.filter(planta__tienda_id=tienda_id)
+
+    hechos_racks = set(prev_racks_qs.values_list('rack__tienda_id', 'tecnico_id'))
+    hechos_plantas = set(prev_plantas_qs.values_list('planta__tienda_id', 'tecnico_id'))
+
+    tiendas_hechas_racks = {t for t, _ in hechos_racks}
+    tiendas_hechas_plantas = {t for t, _ in hechos_plantas}
+
+    # ── Total general ────────────────────────────────────────────────────
+    cobertura_global = {
+        'racks': {
+            'total': len(tiendas_con_racks),
+            'hechos': len(tiendas_hechas_racks & tiendas_con_racks),
+            'pct': _pct(tiendas_hechas_racks, tiendas_con_racks),
+        },
+        'plantas': {
+            'total': len(tiendas_con_plantas),
+            'hechos': len(tiendas_hechas_plantas & tiendas_con_plantas),
+            'pct': _pct(tiendas_hechas_plantas, tiendas_con_plantas),
+        },
+    }
+
+    # ── Por zona ─────────────────────────────────────────────────────────
+    tiendas_all = Tienda.objects.all()
+    if tienda_id:
+        tiendas_all = tiendas_all.filter(pk=tienda_id)
+
+    tiendas_por_zona = {}
+    zona_nombres = {}
+    for t in tiendas_all.select_related('zona').only('id', 'zona__id', 'zona__nombre'):
+        zona_id = t.zona_id
+        tiendas_por_zona.setdefault(zona_id, set()).add(t.id)
+        zona_nombres[zona_id] = t.zona.nombre if t.zona_id else 'Sin zona asignada'
+
+    cobertura_por_zona = []
+    for zona_id, tienda_ids_zona in sorted(
+        tiendas_por_zona.items(),
+        key=lambda kv: (kv[0] is None, zona_nombres.get(kv[0], ''))
+    ):
+        racks_total_z = tienda_ids_zona & tiendas_con_racks
+        plantas_total_z = tienda_ids_zona & tiendas_con_plantas
+        if not racks_total_z and not plantas_total_z:
+            continue
+        cobertura_por_zona.append({
+            'zona': zona_nombres.get(zona_id, 'Sin zona asignada'),
+            'racks_total': len(racks_total_z),
+            'racks_hechos': len(tiendas_hechas_racks & racks_total_z),
+            'racks_pct': _pct(tiendas_hechas_racks, racks_total_z),
+            'plantas_total': len(plantas_total_z),
+            'plantas_hechos': len(tiendas_hechas_plantas & plantas_total_z),
+            'plantas_pct': _pct(tiendas_hechas_plantas, plantas_total_z),
+        })
+
+    # ── Por técnico (según asignaciones de preventivos) ─────────────────
+    asignaciones = (
+        AsignacionTecnico.objects
+        .filter(activo=True)
+        .select_related('tecnico')
+    )
+    if tienda_id:
+        asignaciones = asignaciones.filter(tienda_id=tienda_id)
+
+    tecnicos_map = {}
+    for a in asignaciones:
+        entry = tecnicos_map.setdefault(
+            a.tecnico_id, {'tecnico': a.tecnico, 'racks': set(), 'plantas': set()}
+        )
+        if a.especialidad == Especialidad.RACKS:
+            entry['racks'].add(a.tienda_id)
+        else:
+            entry['plantas'].add(a.tienda_id)
+
+    cobertura_por_tecnico = []
+    for tecnico_id, data in tecnicos_map.items():
+        racks_asignadas = data['racks']
+        plantas_asignadas = data['plantas']
+
+        racks_hechas_tec = {t for (t, tec) in hechos_racks if tec == tecnico_id} & racks_asignadas
+        plantas_hechas_tec = {t for (t, tec) in hechos_plantas if tec == tecnico_id} & plantas_asignadas
+
+        cobertura_por_tecnico.append({
+            'tecnico': data['tecnico'],
+            'racks_total': len(racks_asignadas),
+            'racks_hechos': len(racks_hechas_tec),
+            'racks_pct': round(len(racks_hechas_tec) / len(racks_asignadas) * 100, 1) if racks_asignadas else None,
+            'plantas_total': len(plantas_asignadas),
+            'plantas_hechos': len(plantas_hechas_tec),
+            'plantas_pct': round(len(plantas_hechas_tec) / len(plantas_asignadas) * 100, 1) if plantas_asignadas else None,
+        })
+
+    cobertura_por_tecnico.sort(
+        key=lambda d: (d['tecnico'].nombre_completo or d['tecnico'].username).lower()
+    )
+
+    return {
+        'cobertura_global': cobertura_global,
+        'cobertura_por_zona': cobertura_por_zona,
+        'cobertura_por_tecnico': cobertura_por_tecnico,
+    }
 
 
 class DashboardView(SupervisorRequiredMixin, TemplateView):
@@ -143,6 +279,14 @@ class DashboardView(SupervisorRequiredMixin, TemplateView):
 
         # Historial unificado
         context['historial'] = _get_cerrados_merged(request)[:100]
+
+        # Cobertura de preventivos (% PDVs con preventivo — Racks / Plantas)
+        cobertura = _calcular_cobertura_preventivos(
+            fecha_inicio, fecha_fin, tienda_id or None
+        )
+        context['cobertura_global'] = cobertura['cobertura_global']
+        context['cobertura_por_zona'] = cobertura['cobertura_por_zona']
+        context['cobertura_por_tecnico'] = cobertura['cobertura_por_tecnico']
 
         # Contexto para selectores
         tiendas = list(Tienda.objects.all().order_by('nombre'))
