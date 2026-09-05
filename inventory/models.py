@@ -2,6 +2,24 @@ from django.db import models
 from django.conf import settings
 
 
+class Zona(models.Model):
+    """
+    Zona geográfica/operativa que agrupa varias tiendas (PDVs).
+    Ej: Caribe Norte, Caribe Sur, Barranquilla Metro, etc.
+    """
+    nombre = models.CharField(max_length=100, unique=True)
+    descripcion = models.CharField(max_length=255, blank=True)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = 'Zona'
+        verbose_name_plural = 'Zonas'
+        ordering = ['nombre']
+
+    def __str__(self):
+        return self.nombre
+
+
 class Tienda(models.Model):
     """Sucursal donde está instalado el rack."""
     nombre = models.CharField(max_length=200)
@@ -186,3 +204,39 @@ class RegistroPlanta(models.Model):
         if self.hora_fin and self.hora_inicio:
             return round((self.hora_fin - self.hora_inicio).total_seconds() / 60)
         return None
+
+    @property
+    def duracion_minutos(self):
+        if self.hora_fin and self.hora_inicio:
+            return round((self.hora_fin - self.hora_inicio).total_seconds() / 60)
+        return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ASIGNACIÓN DE PREVENTIVOS (Técnico ↔ Tienda ↔ Especialidad)
+# ─────────────────────────────────────────────────────────────────────────────
+class Especialidad(models.TextChoices):
+    RACKS = 'racks', 'Racks'
+    PLANTAS = 'plantas', 'Plantas Eléctricas'
+class AsignacionTecnico(models.Model):
+    """
+    Define qué punto de venta (Tienda) tiene a cargo cada técnico para el
+    mantenimiento preventivo, en cada especialidad (Racks o Plantas).
+    Es la base para calcular la cobertura de preventivos por técnico.
+    """
+    tecnico = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='asignaciones_preventivo'
+    )
+    tienda = models.ForeignKey(
+        Tienda, on_delete=models.CASCADE, related_name='asignaciones_preventivo'
+    )
+    especialidad = models.CharField(max_length=10, choices=Especialidad.choices)
+    activo = models.BooleanField(default=True)
+    class Meta:
+        verbose_name = 'Asignación de preventivo'
+        verbose_name_plural = 'Asignaciones de preventivos'
+        ordering = ['especialidad', 'tienda__nombre']
+        unique_together = ('tecnico', 'tienda', 'especialidad')
+    def __str__(self):
+        return f'{self.tecnico} — {self.tienda} — {self.get_especialidad_display()}'
