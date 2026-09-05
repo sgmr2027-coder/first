@@ -1,11 +1,40 @@
 from django.contrib import admin
-from .models import Tienda, Rack, Compresor, PlantaElectrica, RegistroPlanta
+from .models import (
+    Zona, Tienda, Rack, Compresor, PlantaElectrica, RegistroPlanta,
+    AsignacionTecnico,
+)
+
+
+@admin.register(Zona)
+class ZonaAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'descripcion', 'total_tiendas', 'activo')
+    search_fields = ('nombre',)
+    list_editable = ('activo',)
+
+    @admin.display(description='Tiendas')
+    def total_tiendas(self, obj):
+        return obj.tiendas.count()
 
 
 @admin.register(Tienda)
 class TiendaAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'codigo', 'direccion')
+    list_display = ('nombre', 'codigo', 'zona', 'direccion')
+    list_filter = ('zona',)
     search_fields = ('nombre', 'codigo')
+    list_editable = ('zona',)
+
+
+@admin.register(AsignacionTecnico)
+class AsignacionTecnicoAdmin(admin.ModelAdmin):
+    list_display = ('tecnico', 'tienda', 'zona_tienda', 'especialidad', 'activo')
+    list_filter = ('especialidad', 'activo', 'tienda__zona', 'tecnico')
+    search_fields = ('tecnico__username', 'tecnico__first_name', 'tecnico__last_name', 'tienda__nombre')
+    list_editable = ('activo',)
+    autocomplete_fields = ('tienda',)
+
+    @admin.display(description='Zona')
+    def zona_tienda(self, obj):
+        return obj.tienda.zona
 
 
 class CompresorInline(admin.TabularInline):
