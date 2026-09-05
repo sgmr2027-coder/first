@@ -21,10 +21,15 @@ class Zona(models.Model):
 
 
 class Tienda(models.Model):
-    """Sucursal donde está instalado el rack."""
+    """Sucursal donde está instalado el rack (Punto de Venta / Establecimiento)."""
     nombre = models.CharField(max_length=200)
     codigo = models.CharField(max_length=50, unique=True, blank=True)
     direccion = models.CharField(max_length=300, blank=True)
+    zona = models.ForeignKey(
+        Zona, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='tiendas',
+        help_text='Zona a la que pertenece este punto de venta'
+    )
 
     class Meta:
         verbose_name = 'Tienda'
@@ -198,12 +203,6 @@ class RegistroPlanta(models.Model):
     def marcar_cerrado(self):
         self.cerrado = True
         self.save()
-
-    @property
-    def duracion_minutos(self):
-        if self.hora_fin and self.hora_inicio:
-            return round((self.hora_fin - self.hora_inicio).total_seconds() / 60)
-        return None
 
     @property
     def duracion_minutos(self):
